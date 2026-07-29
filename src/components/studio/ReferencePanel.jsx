@@ -45,13 +45,13 @@ export default function ReferencePanel({ references, onChange }) {
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
         onClick={() => fileInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${dragOver ? 'border-accent bg-accent/5' : 'border-border hover:border-border-active'}`}
+        className={`border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors ${dragOver ? 'border-accent bg-accent/5' : 'border-border hover:border-border-active'}`}
       >
         <input ref={fileInputRef} type="file" multiple accept="image/*,video/*,audio/*" className="hidden" onChange={(e) => handleFiles(e.target.files)} />
         {uploading ? (
-          <><Loader2 className="w-6 h-6 text-accent mx-auto mb-2 animate-spin" /><div className="text-sm text-secondary-foreground">Uploading…</div></>
+          <><Loader2 className="w-8 h-8 text-accent mx-auto mb-3 animate-spin" /><div className="text-sm text-secondary-foreground">Uploading…</div></>
         ) : (
-          <><Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" /><div className="text-sm text-secondary-foreground">Drop files or click to upload</div><div className="text-xs text-muted-foreground mt-0.5">Images, video, or audio</div></>
+          <><Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3" /><div className="text-sm text-secondary-foreground">Drop files or click to upload</div><div className="text-xs text-muted-foreground mt-0.5">Images, video, or audio</div></>
         )}
       </div>
 

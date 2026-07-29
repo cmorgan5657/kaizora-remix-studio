@@ -10,9 +10,7 @@ export default function ProjectStatePanel({ styleLocks, envLocks, lightingLocks,
         <div className="text-xs text-muted-foreground mt-1">{activeLocks} of 3 active locks</div>
       </div>
 
-      <div className="flex-1" />
-
-      <div className="border-t border-border p-4">
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
         <span className="panel-title">Reference Assets</span>
         <div className="mt-2">
           <ReferencePanel references={references || []} onChange={onReferencesChange} />
