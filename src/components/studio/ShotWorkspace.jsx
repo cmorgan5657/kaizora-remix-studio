@@ -41,7 +41,7 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references, directorOpen }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references, directorOpen, externalPrompt }) {
   const ASPECT_STYLE = directorOpen ? ASPECT_STYLE_DIRECTOR_OPEN : ASPECT_STYLE_DIRECTOR_CLOSED;
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
@@ -70,6 +70,13 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     setGenerationMode(selectedShot.generationMode || 'text2video');
     setSelectedModel(selectedShot.selectedModel || 'veo3');
   }, [selectedShot?.id, selectedShot?.intentText]);
+
+  // Populate intent from external prompt (sent from another page) when no shot is selected
+  useEffect(() => {
+    if (externalPrompt && !selectedShot) {
+      setIntentText(externalPrompt);
+    }
+  }, [externalPrompt]);
 
   const parsedIntent = useMemo(() => parseIntent(intentText), [intentText]);
 
