@@ -41,11 +41,10 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references, directorOpen, externalPrompt }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references, directorOpen, externalPrompt, onExternalPromptChange }) {
   const ASPECT_STYLE = directorOpen ? ASPECT_STYLE_DIRECTOR_OPEN : ASPECT_STYLE_DIRECTOR_CLOSED;
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
-  const [intentText, setIntentText] = useState('');
   const [camera, setCamera] = useState({ shotType: 'Medium', cameraMove: 'Static', cameraSpeed: 50, cameraDistance: 50, cameraEasing: 'Linear', cameraStartDelay: 0, cameraPath: [] });
   const [motion, setMotion] = useState({ motionMode: 'simple', posture: 'Standing', energy: 50, weight: 50, tension: 50, bodyFacing: 'Front', handState: 'At sides', armPosition: 'At sides', headTiltPitch: 0, headTiltRoll: 0, gestureFrequency: 'Occasional', gestureStyle: 'Natural', propInteraction: 'None', gazeTarget: 'Camera', eyeContactDuration: 'Brief', blinkRate: 'Natural' });
   const [abCompare, setAbCompare] = useState(false);
@@ -63,22 +62,14 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
 
   useEffect(() => {
     if (!selectedShot) return;
-    setIntentText(selectedShot.intentText || '');
     setCamera({ shotType: selectedShot.shotType || 'Medium', cameraMove: selectedShot.cameraMove || 'Static', cameraSpeed: selectedShot.cameraSpeed ?? 50, cameraDistance: selectedShot.cameraDistance ?? 50, cameraEasing: selectedShot.cameraEasing || 'Linear', cameraStartDelay: selectedShot.cameraStartDelay ?? 0, cameraPath: selectedShot.cameraPath || [] });
     setMotion({ motionMode: selectedShot.motionMode || 'simple', posture: selectedShot.posture || 'Standing', energy: selectedShot.energy ?? 50, weight: selectedShot.weight ?? 50, tension: selectedShot.tension ?? 50, bodyFacing: selectedShot.bodyFacing || 'Front', handState: selectedShot.handState || 'At sides', armPosition: selectedShot.armPosition || 'At sides', headTiltPitch: selectedShot.headTiltPitch ?? 0, headTiltRoll: selectedShot.headTiltRoll ?? 0, gestureFrequency: selectedShot.gestureFrequency || 'Occasional', gestureStyle: selectedShot.gestureStyle || 'Natural', propInteraction: selectedShot.propInteraction || 'None', gazeTarget: selectedShot.gazeTarget || 'Camera', eyeContactDuration: selectedShot.eyeContactDuration || 'Brief', blinkRate: selectedShot.blinkRate || 'Natural' });
     setTiming({ duration: selectedShot.duration ?? 5, fps: selectedShot.fps ?? 24, resolution: selectedShot.resolution || '1080p', continueFromPrevious: selectedShot.continueFromPrevious ?? true, anchorStrength: selectedShot.anchorStrength ?? 60, shotSeed: selectedShot.shotSeed ?? null, seedLocked: selectedShot.seedLocked ?? false, sameMomentAsShotId: selectedShot.sameMomentAsShotId ?? null });
     setGenerationMode(selectedShot.generationMode || 'text2video');
     setSelectedModel(selectedShot.selectedModel || 'veo3');
-  }, [selectedShot?.id, selectedShot?.intentText]);
+  }, [selectedShot?.id]);
 
-  // Populate intent from external prompt (sent from another page) when no shot is selected
-  useEffect(() => {
-    if (externalPrompt && !selectedShot) {
-      setIntentText(externalPrompt);
-    }
-  }, [externalPrompt]);
-
-  const parsedIntent = useMemo(() => parseIntent(intentText), [intentText]);
+  const parsedIntent = useMemo(() => parseIntent(externalPrompt || ''), [externalPrompt]);
 
   const compiledPayload = useMemo(() => {
     const activeCharacter = characters?.find((c) => c.isActive);
@@ -86,7 +77,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     const activeEnv = envLocks?.find((l) => l.isActive);
     const activeLight = lightingLocks?.find((l) => l.isActive);
     return compilePrompt({
-      intent: intentText,
+      intent: externalPrompt || '',
       shotType: `${camera.shotType} shot, ${camera.cameraMove} move`,
       cameraParams: camera,
       motionParams: motion,
@@ -99,19 +90,19 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
       lockStrengths: { character: activeCharacter?.lockStrength, style: activeStyle?.lockStrength, environment: activeEnv?.lockStrength, lighting: activeLight?.lockStrength },
       references,
     });
-  }, [intentText, characters, styleLocks, envLocks, lightingLocks, project, camera, motion, references]);
+  }, [externalPrompt, characters, styleLocks, envLocks, lightingLocks, project, camera, motion, references]);
 
   const removeChip = (index) => {
     const chip = parsedIntent.chips[index];
     if (!chip) return;
-    setIntentText((prev) => prev.replace(new RegExp(chip.value, 'i'), '').replace(/\s+/g, ' ').trim());
+    onExternalPromptChange?.((externalPrompt || '').replace(new RegExp(chip.value, 'i'), '').replace(/\s+/g, ' ').trim());
   };
 
   const removeConflict = () => {
     if (!parsedIntent.conflict) return;
     const word = parsedIntent.conflict.word;
-    const sentences = intentText.split(/(?<=[.!?])\s+/);
-    setIntentText(sentences.filter((s) => !s.toLowerCase().includes(word)).join(' '));
+    const sentences = (externalPrompt || '').split(/(?<=[.!?])\s+/);
+    onExternalPromptChange?.(sentences.filter((s) => !s.toLowerCase().includes(word)).join(' '));
   };
 
   const getSeed = () => timing.seedLocked && timing.shotSeed != null ? timing.shotSeed : resolvedSeed;
@@ -217,8 +208,8 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
             <div className="space-y-3">
               <div className="text-xs text-muted-foreground">Describe what happens in this shot. Your character and locks are applied automatically.</div>
               <textarea
-                value={intentText}
-                onChange={(e) => setIntentText(e.target.value)}
+                value={externalPrompt || ''}
+                onChange={(e) => onExternalPromptChange?.(e.target.value)}
                 data-onboarding="intent-field"
                 placeholder="e.g. She walks toward the camera, stops, and looks up at the sky."
                 className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring resize-none"

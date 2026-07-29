@@ -181,7 +181,7 @@ export default function Studio() {
         setSequences([seq]);
         setActiveSequenceId(seq.id);
       }
-      const shot = await base44.entities.Shot.create({ sequenceId: seq.id, projectId, name: `Shot ${shots.length + 1}`, intentText: payload.positivePrompt, orderIndex: shots.length, status: 'generating', qualityTier, shotSeed: seed, seedLocked: project.seedLocked, referenceAssets: payload.references || [], generationMode: payload.generationMode, selectedModel: payload.selectedModel, ...camera, ...motion, ...timing });
+      const shot = await base44.entities.Shot.create({ sequenceId: seq.id, projectId, name: `Shot ${shots.length + 1}`, intentText: externalPrompt, orderIndex: shots.length, status: 'generating', qualityTier, shotSeed: seed, seedLocked: project.seedLocked, referenceAssets: payload.references || [], generationMode: payload.generationMode, selectedModel: payload.selectedModel, ...camera, ...motion, ...timing });
       setShots((prev) => [...prev, shot]);
       setSelectedShotId(shot.id);
       const activeCharacter = characters.find((c) => c.isActive);
@@ -380,6 +380,7 @@ export default function Studio() {
     if (!selectedShotId) return;
     await base44.entities.Shot.update(selectedShotId, { intentText });
     setShots((prev) => prev.map((s) => (s.id === selectedShotId ? { ...s, intentText } : s)));
+    setExternalPrompt(intentText);
   };
 
   const selectedShot = shots.find((s) => s.id === selectedShotId) || null;
@@ -387,6 +388,7 @@ export default function Studio() {
   useEffect(() => {
     if (!selectedShot) { setReferences([]); return; }
     setReferences(selectedShot.referenceAssets || []);
+    setExternalPrompt(selectedShot.intentText || '');
   }, [selectedShot?.id]);
 
   // Receive external prompt + reference asset sent from another page via URL query params
@@ -451,7 +453,7 @@ export default function Studio() {
                   <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                 ))}
               </div>
-              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} references={references} directorOpen={directorOpen} externalPrompt={externalPrompt} />
+              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} references={references} directorOpen={directorOpen} externalPrompt={externalPrompt} onExternalPromptChange={setExternalPrompt} />
             </main>
 
             <aside className={`flex-shrink-0 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px] max-[1399px]:hidden'}`}>
