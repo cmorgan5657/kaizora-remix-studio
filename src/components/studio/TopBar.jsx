@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { HelpCircle, Download, Check, Loader2, Settings, Clapperboard } from 'lucide-react';
+import { HelpCircle, Download, Check, Loader2, Settings, Clapperboard, Palette, Mountain, Sun } from 'lucide-react';
+import LockNavDropdown from './LockNavDropdown';
 
 const WORKSPACES = [
   { id: 'studio', label: 'STUDIO' },
@@ -8,7 +9,7 @@ const WORKSPACES = [
   { id: 'sequence', label: 'SEQUENCE' },
 ];
 
-export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving, onOpenCredits, onExport, canExport, exporting, onOpenSettings, onOpenHelp, directorOpen, onToggleDirector }) {
+export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving, onOpenCredits, onExport, canExport, exporting, onOpenSettings, onOpenHelp, directorOpen, onToggleDirector, styleLocks, envLocks, lightingLocks, onAddStyleLock, onAddEnvLock, onAddLightingLock, onEditLock, onToggleLockActive }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(project?.name || '');
   const inputRef = useRef(null);
@@ -63,6 +64,10 @@ export default function TopBar({ project, onRename, activeWorkspace, onWorkspace
             {ws.label}
           </button>
         ))}
+        <div className="w-px h-5 bg-border mx-0.5" />
+        <LockNavDropdown label="STYLE" icon={Palette} locks={styleLocks} lockType="StyleLock" onAdd={onAddStyleLock} onEdit={onEditLock} onToggleActive={onToggleLockActive} />
+        <LockNavDropdown label="ENV" icon={Mountain} locks={envLocks} lockType="EnvironmentLock" onAdd={onAddEnvLock} onEdit={onEditLock} onToggleActive={onToggleLockActive} />
+        <LockNavDropdown label="LIGHT" icon={Sun} locks={lightingLocks} lockType="LightingLock" onAdd={onAddLightingLock} onEdit={onEditLock} onToggleActive={onToggleLockActive} />
       </div>
 
       <div className="flex items-center gap-2 flex-1 justify-end">

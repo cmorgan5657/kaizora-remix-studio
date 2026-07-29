@@ -426,7 +426,7 @@ export default function Studio() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} onOpenSettings={() => setProjectSettingsOpen(true)} onOpenHelp={() => setShortcutsHelpOpen(true)} directorOpen={directorOpen} onToggleDirector={() => setDirectorOpen(!directorOpen)} />
+      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} onOpenSettings={() => setProjectSettingsOpen(true)} onOpenHelp={() => setShortcutsHelpOpen(true)} directorOpen={directorOpen} onToggleDirector={() => setDirectorOpen(!directorOpen)} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} onAddStyleLock={addStyleLock} onAddEnvLock={addEnvLock} onAddLightingLock={addLightingLock} onEditLock={handleEditLock} onToggleLockActive={handleToggleLockActive} />
 
       <div className="flex-1 flex overflow-hidden relative">
         {activeWorkspace === 'studio' ? (
