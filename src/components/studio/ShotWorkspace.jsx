@@ -30,21 +30,21 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots }) {
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
   const [intentText, setIntentText] = useState('');
   const [camera, setCamera] = useState({ shotType: 'Medium', cameraMove: 'Static', cameraSpeed: 50, cameraDistance: 50, cameraEasing: 'Linear', cameraStartDelay: 0, cameraPath: [] });
   const [motion, setMotion] = useState({ motionMode: 'simple', posture: 'Standing', energy: 50, weight: 50, tension: 50, bodyFacing: 'Front', handState: 'At sides', armPosition: 'At sides', headTiltPitch: 0, headTiltRoll: 0, gestureFrequency: 'Occasional', gestureStyle: 'Natural', propInteraction: 'None', gazeTarget: 'Camera', eyeContactDuration: 'Brief', blinkRate: 'Natural' });
   const [abCompare, setAbCompare] = useState(false);
-  const [timing, setTiming] = useState({ duration: 5, fps: 24, resolution: '1080p', continueFromPrevious: true, anchorStrength: 60 });
+  const [timing, setTiming] = useState({ duration: 5, fps: 24, resolution: '1080p', continueFromPrevious: true, anchorStrength: 60, shotSeed: null, seedLocked: false, sameMomentAsShotId: null });
 
   useEffect(() => {
     if (!selectedShot) return;
     setIntentText(selectedShot.intentText || '');
     setCamera({ shotType: selectedShot.shotType || 'Medium', cameraMove: selectedShot.cameraMove || 'Static', cameraSpeed: selectedShot.cameraSpeed ?? 50, cameraDistance: selectedShot.cameraDistance ?? 50, cameraEasing: selectedShot.cameraEasing || 'Linear', cameraStartDelay: selectedShot.cameraStartDelay ?? 0, cameraPath: selectedShot.cameraPath || [] });
     setMotion({ motionMode: selectedShot.motionMode || 'simple', posture: selectedShot.posture || 'Standing', energy: selectedShot.energy ?? 50, weight: selectedShot.weight ?? 50, tension: selectedShot.tension ?? 50, bodyFacing: selectedShot.bodyFacing || 'Front', handState: selectedShot.handState || 'At sides', armPosition: selectedShot.armPosition || 'At sides', headTiltPitch: selectedShot.headTiltPitch ?? 0, headTiltRoll: selectedShot.headTiltRoll ?? 0, gestureFrequency: selectedShot.gestureFrequency || 'Occasional', gestureStyle: selectedShot.gestureStyle || 'Natural', propInteraction: selectedShot.propInteraction || 'None', gazeTarget: selectedShot.gazeTarget || 'Camera', eyeContactDuration: selectedShot.eyeContactDuration || 'Brief', blinkRate: selectedShot.blinkRate || 'Natural' });
-    setTiming({ duration: selectedShot.duration ?? 5, fps: selectedShot.fps ?? 24, resolution: selectedShot.resolution || '1080p', continueFromPrevious: selectedShot.continueFromPrevious ?? true, anchorStrength: selectedShot.anchorStrength ?? 60 });
+    setTiming({ duration: selectedShot.duration ?? 5, fps: selectedShot.fps ?? 24, resolution: selectedShot.resolution || '1080p', continueFromPrevious: selectedShot.continueFromPrevious ?? true, anchorStrength: selectedShot.anchorStrength ?? 60, shotSeed: selectedShot.shotSeed ?? null, seedLocked: selectedShot.seedLocked ?? false, sameMomentAsShotId: selectedShot.sameMomentAsShotId ?? null });
   }, [selectedShot?.id]);
 
   const parsedIntent = useMemo(() => parseIntent(intentText), [intentText]);
@@ -82,9 +82,10 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     setIntentText(sentences.filter((s) => !s.toLowerCase().includes(word)).join(' '));
   };
 
-  const handleGenerate = () => onGenerate(compiledPayload, quality, camera, motion, timing);
-  const handleRegenerate = () => onRegenerate?.(compiledPayload, quality, camera, motion, timing);
-  const handleSurgicalRegenerate = (region, timeRange) => onRegenerate?.(compiledPayload, quality, camera, motion, timing, { region, timeRange });
+  const getSeed = () => timing.seedLocked && timing.shotSeed != null ? timing.shotSeed : resolvedSeed;
+  const handleGenerate = () => onGenerate({ ...compiledPayload, seed: getSeed() }, quality, camera, motion, timing);
+  const handleRegenerate = () => onRegenerate?.({ ...compiledPayload, seed: getSeed() }, quality, camera, motion, timing);
+  const handleSurgicalRegenerate = (region, timeRange) => onRegenerate?.({ ...compiledPayload, seed: getSeed() }, quality, camera, motion, timing, { region, timeRange });
   const isGenerating = generation?.status === 'running';
 
   return (
@@ -161,7 +162,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
             </div>
           )}
           {activeTab === 'MOTION' && <MotionControls motion={motion} setMotion={setMotion} />}
-          {activeTab === 'TIMING' && <TimingControls timing={timing} setTiming={setTiming} />}
+          {activeTab === 'TIMING' && <TimingControls timing={timing} setTiming={setTiming} shots={shots?.filter((s) => s.id !== selectedShot?.id)} />}
           {activeTab === 'OUTPUT' && <OutputControls generation={generation} onExport={onExport} />}
         </div>
       </div>

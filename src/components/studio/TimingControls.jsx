@@ -1,3 +1,4 @@
+import { Lock, Shuffle } from 'lucide-react';
 import ControlSlider from '@/components/characters/ControlSlider';
 
 const selectClass = 'w-full bg-card border border-border rounded-md px-2.5 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring';
@@ -11,7 +12,7 @@ function Field({ label, children }) {
   );
 }
 
-export default function TimingControls({ timing, setTiming }) {
+export default function TimingControls({ timing, setTiming, shots }) {
   const update = (key, value) => setTiming((prev) => ({ ...prev, [key]: value }));
   return (
     <div className="space-y-4">
@@ -43,6 +44,33 @@ export default function TimingControls({ timing, setTiming }) {
       </div>
       <ControlSlider label="Anchor strength" value={timing.anchorStrength} onChange={(v) => update('anchorStrength', v)} defaultValue={60} />
       <p className="text-xs text-muted-foreground">Higher anchor strength holds continuity between shots more firmly.</p>
+      <div className="flex items-center justify-between pt-2 border-t border-border">
+        <div>
+          <div className="text-xs text-foreground">Shot seed</div>
+          <div className="text-xs text-muted-foreground tabular-nums">{timing.shotSeed ?? 'Inherited'}</div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={() => update('seedLocked', !timing.seedLocked)} className={`p-1 rounded transition-colors ${timing.seedLocked ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`} title={timing.seedLocked ? 'Unlock shot seed' : 'Lock shot seed'}>
+            <Lock className="w-3 h-3" />
+          </button>
+          {!timing.seedLocked && (
+            <button onClick={() => update('shotSeed', Math.floor(Math.random() * 1000000))} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors" title="Randomize shot seed">
+              <Shuffle className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </div>
+      <Field label="Same moment as">
+        <select value={timing.sameMomentAsShotId || ''} onChange={(e) => update('sameMomentAsShotId', e.target.value || null)} className={selectClass}>
+          <option value="">None (independent)</option>
+          {shots?.map((s) => (
+            <option key={s.id} value={s.id}>{s.name || `Shot ${(s.orderIndex ?? 0) + 1}`}</option>
+          ))}
+        </select>
+      </Field>
+      {timing.sameMomentAsShotId && (
+        <p className="text-xs text-muted-foreground">Linked shots share the same moment from different angles. Lock the seed for deterministic consistency.</p>
+      )}
     </div>
   );
 }
