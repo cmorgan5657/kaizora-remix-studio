@@ -90,8 +90,9 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
       seed: resolvedSeed,
       aspectRatio: project?.aspectRatio || '16:9',
       lockStrengths: { character: activeCharacter?.lockStrength, style: activeStyle?.lockStrength, environment: activeEnv?.lockStrength, lighting: activeLight?.lockStrength },
+      references,
     });
-  }, [intentText, characters, styleLocks, envLocks, lightingLocks, project, camera, motion]);
+  }, [intentText, characters, styleLocks, envLocks, lightingLocks, project, camera, motion, references]);
 
   const removeChip = (index) => {
     const chip = parsedIntent.chips[index];

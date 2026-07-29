@@ -496,6 +496,7 @@ export default function Studio() {
         <LockEditorDialog
           lockType={editingLock.type}
           lock={editingLock.lock}
+          references={references}
           onClose={() => setEditingLock(null)}
           onUpdate={(data) => {
             handleUpdateLock(editingLock.type, editingLock.lock.id, data);

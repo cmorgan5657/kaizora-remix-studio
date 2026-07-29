@@ -5,7 +5,7 @@ import LightingLockEditor from './locks/LightingLockEditor';
 
 const TITLES = { StyleLock: 'Style Lock', EnvironmentLock: 'Environment Lock', LightingLock: 'Lighting Lock' };
 
-export default function LockEditorDialog({ lockType, lock, onClose, onUpdate }) {
+export default function LockEditorDialog({ lockType, lock, onClose, onUpdate, references }) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
@@ -15,9 +15,9 @@ export default function LockEditorDialog({ lockType, lock, onClose, onUpdate }) 
           <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-thin">
-          {lockType === 'StyleLock' && <StyleLockEditor lock={lock} onUpdate={onUpdate} />}
-          {lockType === 'EnvironmentLock' && <EnvironmentLockEditor lock={lock} onUpdate={onUpdate} />}
-          {lockType === 'LightingLock' && <LightingLockEditor lock={lock} onUpdate={onUpdate} />}
+          {lockType === 'StyleLock' && <StyleLockEditor lock={lock} onUpdate={onUpdate} references={references} />}
+          {lockType === 'EnvironmentLock' && <EnvironmentLockEditor lock={lock} onUpdate={onUpdate} references={references} />}
+          {lockType === 'LightingLock' && <LightingLockEditor lock={lock} onUpdate={onUpdate} references={references} />}
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Upload, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ControlSlider from '@/components/characters/ControlSlider';
+import ReferenceInfluence from './ReferenceInfluence';
 
 const inputClass = 'w-full bg-card border border-border rounded-md px-2.5 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring';
 const SCALES = ['Intimate', 'Room', 'Building', 'Landscape'];
@@ -15,7 +16,7 @@ function Field({ label, children }) {
   );
 }
 
-export default function EnvironmentLockEditor({ lock, onUpdate }) {
+export default function EnvironmentLockEditor({ lock, onUpdate, references }) {
   const fileInputRef = useRef(null);
   const refImages = lock.referenceImages || [];
 
@@ -31,6 +32,7 @@ export default function EnvironmentLockEditor({ lock, onUpdate }) {
 
   return (
     <div className="p-5 space-y-5">
+      {references && references.length > 0 && <ReferenceInfluence references={references} lockLabel="Environment Lock" />}
       <Field label="Name"><input value={lock.name || ''} onChange={(e) => onUpdate({ name: e.target.value })} className={inputClass} /></Field>
 
       <div>

@@ -32,6 +32,7 @@ export function compilePrompt(input) {
     guidanceScale = 7.5,
     lockStrengths = {},
     postProcessChain = [],
+    references = [],
   } = input;
 
   const segments = [];
@@ -90,6 +91,21 @@ export function compilePrompt(input) {
     conditioningChannels.push({ name: 'Depth Map', type: 'ControlNet', weight: lockStrengths.environment ?? 75, source: 'Environment Lock' });
   }
 
+  // Reference assets heavily influence Style, Environment, and Lighting locks
+  const referenceConditioning = { style: [], environment: [], lighting: [] };
+  const refAssets = (references || []).filter((r) => r.type === 'image' || r.type === 'video');
+  refAssets.forEach((ref, i) => {
+    const sWeight = lockStrengths.style ?? 75;
+    const eWeight = lockStrengths.environment ?? 75;
+    const lWeight = lockStrengths.lighting ?? 75;
+    conditioningChannels.push({ name: `Style Ref ${i + 1}`, type: 'IP-Adapter', weight: sWeight, source: 'reference asset → Style Lock', url: ref.url });
+    conditioningChannels.push({ name: `Env Ref ${i + 1}`, type: 'IP-Adapter', weight: eWeight, source: 'reference asset → Environment Lock', url: ref.url });
+    conditioningChannels.push({ name: `Light Ref ${i + 1}`, type: 'IP-Adapter', weight: lWeight, source: 'reference asset → Lighting Lock', url: ref.url });
+    referenceConditioning.style.push({ url: ref.url, weight: sWeight });
+    referenceConditioning.environment.push({ url: ref.url, weight: eWeight });
+    referenceConditioning.lighting.push({ url: ref.url, weight: lWeight });
+  });
+
   return {
     positivePrompt,
     negativePrompt,
@@ -111,5 +127,6 @@ export function compilePrompt(input) {
     guidanceScale,
     conditioningChannels,
     postProcessChain,
+    referenceConditioning,
   };
 }

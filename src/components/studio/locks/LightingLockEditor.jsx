@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { kelvinToRGB } from '@/lib/colorUtils';
 import ControlSlider from '@/components/characters/ControlSlider';
+import ReferenceInfluence from './ReferenceInfluence';
 
 const inputClass = 'w-full bg-card border border-border rounded-md px-2.5 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring';
 
@@ -21,7 +22,7 @@ function Field({ label, children }) {
   );
 }
 
-export default function LightingLockEditor({ lock, onUpdate }) {
+export default function LightingLockEditor({ lock, onUpdate, references }) {
   const [newSource, setNewSource] = useState('');
   const practicalSources = lock.practicalSources || [];
   const swatchColor = kelvinToRGB(lock.colorTemperature || 5600);
@@ -34,6 +35,7 @@ export default function LightingLockEditor({ lock, onUpdate }) {
 
   return (
     <div className="p-5 space-y-5">
+      {references && references.length > 0 && <ReferenceInfluence references={references} lockLabel="Lighting Lock" />}
       <Field label="Name"><input value={lock.name || ''} onChange={(e) => onUpdate({ name: e.target.value })} className={inputClass} /></Field>
 
       <div>
