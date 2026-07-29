@@ -19,12 +19,20 @@ import ModelSelector from './ModelSelector';
 
 const TABS = ['MODEL', 'INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
-const ASPECT_STYLE = {
+const ASPECT_STYLE_DIRECTOR_OPEN = {
   '16:9': 'aspect-video max-w-[614px]',
   '9:16': 'aspect-[9/16] max-w-[256px]',
   '2.39:1': 'aspect-[2.39/1] max-w-[614px]',
   '1:1': 'aspect-square max-w-[358px]',
   '4:5': 'aspect-[4/5] max-w-[307px]',
+};
+
+const ASPECT_STYLE_DIRECTOR_CLOSED = {
+  '16:9': 'aspect-video max-w-[768px]',
+  '9:16': 'aspect-[9/16] max-w-[320px]',
+  '2.39:1': 'aspect-[2.39/1] max-w-[768px]',
+  '1:1': 'aspect-square max-w-[448px]',
+  '4:5': 'aspect-[4/5] max-w-[384px]',
 };
 
 const QUALITY_MODES = [
@@ -33,7 +41,8 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references, directorOpen }) {
+  const ASPECT_STYLE = directorOpen ? ASPECT_STYLE_DIRECTOR_OPEN : ASPECT_STYLE_DIRECTOR_CLOSED;
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
   const [intentText, setIntentText] = useState('');

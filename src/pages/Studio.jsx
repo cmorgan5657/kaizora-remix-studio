@@ -437,7 +437,7 @@ export default function Studio() {
                   <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                 ))}
               </div>
-              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} references={references} />
+              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} references={references} directorOpen={directorOpen} />
             </main>
 
             <aside className={`flex-shrink-0 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px] max-[1399px]:hidden'}`}>
