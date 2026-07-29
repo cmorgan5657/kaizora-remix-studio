@@ -117,8 +117,8 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
 
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border flex-shrink-0 overflow-x-auto scrollbar-thin">
         {QUICK_ACTIONS.map((a) => (
-          <button key={a.id} onClick={() => { setActiveAction(a.id); setInput(''); }} className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors whitespace-nowrap flex-shrink-0 ${activeAction === a.id ? 'bg-accent text-accent-foreground' : 'bg-card border border-border text-secondary-foreground hover:border-border-active'}`}>
-            <a.icon className="w-3 h-3" /> {a.label}
+          <button key={a.id} onClick={() => { setActiveAction(a.id); setInput(''); }} className={`flex items-center gap-1 px-1.5 py-0.5 text-[11px] rounded transition-colors whitespace-nowrap flex-shrink-0 ${activeAction === a.id ? 'bg-accent text-accent-foreground' : 'bg-card border border-border text-secondary-foreground hover:border-border-active'}`}>
+            <a.icon className="w-2.5 h-2.5" /> {a.label}
           </button>
         ))}
       </div>
