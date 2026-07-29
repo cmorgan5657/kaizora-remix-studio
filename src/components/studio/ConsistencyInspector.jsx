@@ -1,5 +1,13 @@
 import { Check, AlertCircle } from 'lucide-react';
 
+const DIMENSIONS = [
+  { key: 'face', label: 'Character Identity' },
+  { key: 'style', label: 'Style' },
+  { key: 'structural', label: 'Structure' },
+  { key: 'lighting', label: 'Lighting' },
+  { key: 'temporalStability', label: 'Temporal Stability' },
+];
+
 function ScoreBar({ label, score }) {
   const color = score >= 70 ? 'bg-success' : score >= 50 ? 'bg-warning' : 'bg-destructive';
   const textColor = score >= 70 ? 'text-success' : score >= 50 ? 'text-warning' : 'text-destructive';
@@ -18,7 +26,7 @@ function ScoreBar({ label, score }) {
 
 export default function ConsistencyInspector({ scores, remedies }) {
   if (!scores) return null;
-  const overall = Math.round((scores.face + scores.style + scores.structural) / 3);
+  const overall = scores.overall || Math.round(DIMENSIONS.reduce((sum, d) => sum + (scores[d.key] || 0), 0) / DIMENSIONS.length);
   const overallColor = overall >= 70 ? 'text-success' : overall >= 50 ? 'text-warning' : 'text-destructive';
 
   return (
@@ -28,9 +36,7 @@ export default function ConsistencyInspector({ scores, remedies }) {
         <span className={`text-xs font-medium tabular-nums ${overallColor}`}>Overall: {overall}</span>
       </div>
       <div className="space-y-2">
-        <ScoreBar label="Face" score={scores.face} />
-        <ScoreBar label="Style" score={scores.style} />
-        <ScoreBar label="Structure" score={scores.structural} />
+        {DIMENSIONS.map((dim) => <ScoreBar key={dim.key} label={dim.label} score={scores[dim.key] || 0} />)}
       </div>
       {remedies.length > 0 ? (
         <div className="space-y-1.5">

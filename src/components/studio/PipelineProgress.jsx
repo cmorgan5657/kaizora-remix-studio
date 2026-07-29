@@ -1,12 +1,12 @@
 import { Check, Loader2, Circle } from 'lucide-react';
 
 const STAGES = [
-  { id: 'resolve', name: 'Resolve' },
-  { id: 'precondition', name: 'Precondition' },
-  { id: 'generate', name: 'Generate' },
-  { id: 'postprocess', name: 'Post-process' },
-  { id: 'measure', name: 'Measure' },
-  { id: 'finalize', name: 'Finalize' },
+  { id: 'resolve', name: 'Resolving settings' },
+  { id: 'precondition', name: 'Preparing conditioning' },
+  { id: 'generate', name: 'Generating' },
+  { id: 'postprocess', name: 'Restoring faces' },
+  { id: 'measure', name: 'Measuring consistency' },
+  { id: 'finalize', name: 'Finalizing' },
 ];
 
 export default function PipelineProgress({ stages }) {

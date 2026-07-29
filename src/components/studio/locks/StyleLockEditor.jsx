@@ -7,7 +7,7 @@ const inputClass = 'w-full bg-card border border-border rounded-md px-2.5 py-1.5
 
 const COLOR_GRADES = ['Natural', 'Warm', 'Cool', 'Teal and Orange', 'Desaturated', 'High Contrast', 'Monochrome', 'Bleach Bypass', 'Custom'];
 const FILM_STOCKS = ['Digital Clean', '35mm', '16mm', 'Super 8', 'VHS'];
-const LENSES = ['Wide 24mm', 'Standard 35mm', 'Telephoto 85mm', 'Anamorphic'];
+const LENSES = ['Wide 24mm', 'Standard 35mm', 'Portrait 50mm', 'Telephoto 85mm', 'Anamorphic'];
 const ASPECT_RATIOS = ['16:9', '9:16', '2.39:1', '1:1', '4:5'];
 
 function Field({ label, icon, children }) {

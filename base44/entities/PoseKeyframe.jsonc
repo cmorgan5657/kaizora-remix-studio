@@ -1,0 +1,38 @@
+{
+  "name": "PoseKeyframe",
+  "type": "object",
+  "properties": {
+    "shotId": {
+      "type": "string"
+    },
+    "characterId": {
+      "type": "string"
+    },
+    "time": {
+      "type": "number",
+      "default": 0
+    },
+    "referenceImageUrl": {
+      "type": "string"
+    },
+    "extractedSkeletonUrl": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "interpolation": {
+      "type": "string",
+      "enum": [
+        "Linear",
+        "Ease",
+        "Hold",
+        "Snap"
+      ],
+      "default": "Linear"
+    }
+  },
+  "required": [
+    "shotId"
+  ]
+}

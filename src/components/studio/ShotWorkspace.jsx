@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Film, Loader2, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import { Film, Loader2, Check, AlertCircle, RefreshCw, Copy } from 'lucide-react';
 import { compilePrompt } from '@/lib/compiler';
 import { parseIntent } from '@/lib/intentParser';
 import IntentChips from './IntentChips';
@@ -13,6 +13,8 @@ import ConsistencyInspector from './ConsistencyInspector';
 import TimingControls from './TimingControls';
 import OutputControls from './OutputControls';
 import SurgicalRevisionBar from './SurgicalRevisionBar';
+import VideoPlayer from './VideoPlayer';
+import PreFlightValidation from './PreFlightValidation';
 
 const TABS = ['INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
@@ -37,6 +39,14 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   const [camera, setCamera] = useState({ shotType: 'Medium', cameraMove: 'Static', cameraSpeed: 50, cameraDistance: 50, cameraEasing: 'Linear', cameraStartDelay: 0, cameraPath: [] });
   const [motion, setMotion] = useState({ motionMode: 'simple', posture: 'Standing', energy: 50, weight: 50, tension: 50, bodyFacing: 'Front', handState: 'At sides', armPosition: 'At sides', headTiltPitch: 0, headTiltRoll: 0, gestureFrequency: 'Occasional', gestureStyle: 'Natural', propInteraction: 'None', gazeTarget: 'Camera', eyeContactDuration: 'Brief', blinkRate: 'Natural' });
   const [abCompare, setAbCompare] = useState(false);
+  const [postProcess, setPostProcess] = useState({
+    faceRestoration: { enabled: true, threshold: 12, strength: 60 },
+    upscale: { enabled: false, targetResolution: '1080p' },
+    colorGrade: { enabled: true },
+    textComposite: { enabled: false },
+    frameInterpolation: { enabled: false, targetFps: 60 },
+    artifactDetection: { enabled: true },
+  });
   const [timing, setTiming] = useState({ duration: 5, fps: 24, resolution: '1080p', continueFromPrevious: true, anchorStrength: 60, shotSeed: null, seedLocked: false, sameMomentAsShotId: null });
 
   useEffect(() => {
@@ -83,10 +93,31 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   };
 
   const getSeed = () => timing.seedLocked && timing.shotSeed != null ? timing.shotSeed : resolvedSeed;
-  const handleGenerate = () => onGenerate({ ...compiledPayload, seed: getSeed() }, quality, camera, motion, timing);
-  const handleRegenerate = () => onRegenerate?.({ ...compiledPayload, seed: getSeed() }, quality, camera, motion, timing);
-  const handleSurgicalRegenerate = (region, timeRange) => onRegenerate?.({ ...compiledPayload, seed: getSeed() }, quality, camera, motion, timing, { region, timeRange });
+  const handleGenerate = () => onGenerate({ ...compiledPayload, seed: getSeed(), postProcessChain: postProcess }, quality, camera, motion, timing);
+  const handleRegenerate = () => onRegenerate?.({ ...compiledPayload, seed: getSeed(), postProcessChain: postProcess }, quality, camera, motion, timing);
+  const handleSurgicalRegenerate = (region, timeRange) => onRegenerate?.({ ...compiledPayload, seed: getSeed(), postProcessChain: postProcess }, quality, camera, motion, timing, { region, timeRange });
   const isGenerating = generation?.status === 'running';
+
+  const QUALITY_CREDITS = { Draft: 1, Standard: 3, Final: 8 };
+  const preFlightWarnings = useMemo(() => {
+    const warnings = [];
+    const activeChar = characters?.find((c) => c.isActive);
+    if (activeChar && (activeChar.sheetStrength || 0) < 50) {
+      warnings.push({ message: `Character sheet strength is ${activeChar.sheetStrength || 0}/100. Below 50, expect drift between shots.` });
+    }
+    const activeEnv = envLocks?.find((l) => l.isActive);
+    if (!activeEnv && camera.cameraMove !== 'Static') {
+      warnings.push({ message: 'No environment lock. Large camera moves may distort the background.' });
+    }
+    if (compiledPayload.tokenCount > compiledPayload.tokenBudget) {
+      warnings.push({ message: `Compiled prompt is ${compiledPayload.tokenCount} tokens (budget: ${compiledPayload.tokenBudget}). Lowest-priority segments will be dropped.` });
+    }
+    if (parsedIntent.conflict) {
+      warnings.push({ message: parsedIntent.conflict.message });
+    }
+    return warnings;
+  }, [characters, envLocks, camera.cameraMove, compiledPayload.tokenCount, compiledPayload.tokenBudget, parsedIntent.conflict]);
+  const blockingError = (project?.creditBalance ?? 0) < (QUALITY_CREDITS[quality] || 1) ? `Insufficient credits. Need ${QUALITY_CREDITS[quality] || 1}, have ${project?.creditBalance ?? 0}.` : null;
 
   return (
     <div className="h-full flex flex-col">
@@ -103,10 +134,24 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
             <PipelineProgress stages={generation.stages} />
           ) : generation?.status === 'complete' && generation.version ? (
             <>
-              <Check className="w-10 h-10 text-success" />
-              <div className="text-sm text-foreground">Shot generated</div>
-              <div className="text-xs text-muted-foreground">Version {generation.version.versionNumber} · {generation.version.creditCost} credits · Seed {generation.version.resolvedSeed}</div>
-              <div className="text-xs text-muted-foreground mt-1">Quality: {generation.version.qualityTier}</div>
+              <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-1">
+                {characters?.filter((c) => c.isActive).map((c) => (
+                  <span key={c.id} className="px-1.5 py-0.5 text-[10px] rounded bg-accent/20 text-accent">{c.name}</span>
+                ))}
+                {styleLocks?.filter((l) => l.isActive).map((l) => (
+                  <span key={l.id} className="px-1.5 py-0.5 text-[10px] rounded bg-pink-500/20 text-pink-400">Style</span>
+                ))}
+                {envLocks?.filter((l) => l.isActive).map((l) => (
+                  <span key={l.id} className="px-1.5 py-0.5 text-[10px] rounded bg-success/20 text-success">Env</span>
+                ))}
+                {lightingLocks?.filter((l) => l.isActive).map((l) => (
+                  <span key={l.id} className="px-1.5 py-0.5 text-[10px] rounded bg-warning/20 text-warning">Light</span>
+                ))}
+              </div>
+              <div className="w-full flex-1 min-h-0">
+                <VideoPlayer videoUrl={generation.version.videoUrl} thumbnailUrl={generation.version.thumbnailUrl} duration={timing.duration} resolution={timing.resolution} />
+              </div>
+              <div className="text-xs text-muted-foreground text-center">Version {generation.version.versionNumber} · {generation.version.creditCost} credits · Seed {generation.version.resolvedSeed}</div>
               {generation.scores && <ConsistencyInspector scores={generation.scores} remedies={generation.remedies || []} />}
             </>
           ) : generation?.status === 'failed' ? (
@@ -147,6 +192,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
               <textarea
                 value={intentText}
                 onChange={(e) => setIntentText(e.target.value)}
+                data-onboarding="intent-field"
                 placeholder="e.g. She walks toward the camera, stops, and looks up at the sky."
                 className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring resize-none"
                 rows={2}
@@ -157,19 +203,21 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
           )}
           {activeTab === 'CAMERA' && (
             <div className="space-y-4">
-              <CameraControls camera={camera} setCamera={setCamera} />
+              <CameraControls camera={camera} setCamera={setCamera} hasEnvLock={!!envLocks?.some((l) => l.isActive)} />
               <PresetBar presets={presets} onSave={(name) => onSavePreset(name, camera, motion)} onApply={(preset) => { setCamera(preset.cameraParams); setMotion(preset.motionParams); }} />
             </div>
           )}
           {activeTab === 'MOTION' && <MotionControls motion={motion} setMotion={setMotion} />}
           {activeTab === 'TIMING' && <TimingControls timing={timing} setTiming={setTiming} shots={shots?.filter((s) => s.id !== selectedShot?.id)} />}
-          {activeTab === 'OUTPUT' && <OutputControls generation={generation} onExport={onExport} />}
+          {activeTab === 'OUTPUT' && <OutputControls generation={generation} onExport={onExport} postProcess={postProcess} setPostProcess={setPostProcess} />}
         </div>
       </div>
 
       {selectedShot && generation?.status === 'complete' && (
         <SurgicalRevisionBar onRegenerate={handleSurgicalRegenerate} disabled={isGenerating} />
       )}
+
+      <PreFlightValidation warnings={preFlightWarnings} blockingError={blockingError} />
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-panel gap-4">
         <div className="flex items-center gap-0.5 bg-card rounded-md p-0.5 border border-border">
@@ -190,11 +238,18 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
         </div>
         <div className="flex items-center gap-2">
           {selectedShot && (
-            <button onClick={handleRegenerate} disabled={isGenerating} className="px-4 py-2 text-sm font-medium text-secondary-foreground bg-card-raised border border-border rounded-md hover:border-border-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" /> Regenerate
-            </button>
+            <>
+              <button onClick={handleRegenerate} disabled={isGenerating} className="px-4 py-2 text-sm font-medium text-secondary-foreground bg-card-raised border border-border rounded-md hover:border-border-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" title="Same seed, refine settings">
+                <RefreshCw className="w-4 h-4" /> Refine
+              </button>
+              {generation?.version?.resolvedPayload && (
+                <button onClick={() => onRegenerate?.({ ...generation.version.resolvedPayload, seed: generation.version.resolvedSeed, postProcessChain: postProcess }, quality, camera, motion, timing)} disabled={isGenerating} className="px-3 py-2 text-sm font-medium text-secondary-foreground bg-card-raised border border-border rounded-md hover:border-border-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" title="Reproduce from stored payload exactly">
+                  <Copy className="w-4 h-4" /> Reproduce
+                </button>
+              )}
+            </>
           )}
-          <button onClick={handleGenerate} disabled={isGenerating} className="px-5 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          <button onClick={handleGenerate} disabled={isGenerating || !!blockingError} data-onboarding="generate-btn" className="px-5 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
             {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : 'Generate'}
           </button>
         </div>

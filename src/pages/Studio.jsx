@@ -13,6 +13,7 @@ import Timeline from '@/components/studio/Timeline';
 import CreditDashboard from '@/components/studio/CreditDashboard';
 import ProjectSettings from '@/components/studio/ProjectSettings';
 import ShortcutsHelp from '@/components/studio/ShortcutsHelp';
+import OnboardingHighlight from '@/components/studio/OnboardingHighlight';
 import { runPipeline } from '@/lib/pipeline';
 
 export default function Studio() {
@@ -40,6 +41,7 @@ export default function Studio() {
   const [selectedShotId, setSelectedShotId] = useState(null);
   const [activeSequenceId, setActiveSequenceId] = useState(null);
   const [versions, setVersions] = useState([]);
+  const [continuityFlags, setContinuityFlags] = useState([]);
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -79,6 +81,11 @@ export default function Studio() {
     if (!selectedShotId) { setVersions([]); return; }
     base44.entities.ShotVersion.filter({ shotId: selectedShotId }).then(setVersions).catch(() => {});
   }, [selectedShotId]);
+
+  useEffect(() => {
+    if (!activeSequenceId) { setContinuityFlags([]); return; }
+    base44.entities.ContinuityFlag.filter({ sequenceId: activeSequenceId }).then(setContinuityFlags).catch(() => {});
+  }, [activeSequenceId]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -177,7 +184,7 @@ export default function Studio() {
       const activeStyle = styleLocks.find((l) => l.isActive);
       const activeEnv = envLocks.find((l) => l.isActive);
       const activeLight = lightingLocks.find((l) => l.isActive);
-      const result = await runPipeline({ projectId, shotId: shot.id, payload: finalPayload, qualityTier, character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
+      const result = await runPipeline({ projectId, shotId: shot.id, payload: finalPayload, qualityTier, character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight, postProcess: payload.postProcessChain, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
       await base44.entities.Shot.update(shot.id, { status: 'complete', currentVersionId: result.version.id });
       setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
       setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version, scores: result.scores, remedies: result.remedies, previousVersion: prev.version }));
@@ -205,7 +212,7 @@ export default function Studio() {
       const activeStyle = styleLocks.find((l) => l.isActive);
       const activeEnv = envLocks.find((l) => l.isActive);
       const activeLight = lightingLocks.find((l) => l.isActive);
-      const result = await runPipeline({ projectId, shotId: selectedShotId, payload: finalPayload, qualityTier, character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
+      const result = await runPipeline({ projectId, shotId: selectedShotId, payload: finalPayload, qualityTier, character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight, postProcess: payload.postProcessChain, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
       await base44.entities.Shot.update(selectedShotId, { status: 'complete', currentVersionId: result.version.id });
       if (surgical) {
         await base44.entities.ShotVersion.update(result.version.id, { isPartialRegeneration: true, regeneratedRegion: surgical.region, regeneratedTimeRange: surgical.timeRange });
@@ -352,6 +359,12 @@ export default function Studio() {
   };
   const selectedShot = shots.find((s) => s.id === selectedShotId) || null;
 
+  const STAGE_NAMES = { resolve: 'Resolving settings', precondition: 'Preparing conditioning', generate: 'Generating', postprocess: 'Restoring faces', measure: 'Measuring consistency', finalize: 'Finalizing' };
+  const activeStageId = generation.status === 'running' ? Object.entries(generation.stages).find(([, s]) => s === 'processing')?.[0] : null;
+  const generatingStage = activeStageId ? STAGE_NAMES[activeStageId] : null;
+
+  const onboardingStep = shots.length === 0 ? (characters.length === 0 ? 'character_needed' : 'intent_needed') : null;
+
   const panelProps = { characters, styleLocks, envLocks, lightingLocks, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock, onEditLock: handleEditLock, onToggleLockActive: handleToggleLockActive };
 
   if (loading) {
@@ -426,19 +439,21 @@ export default function Studio() {
             onCreateCharacter={(created) => setCharacters((prev) => [...prev, created])}
           />
         ) : (
-          <Timeline shots={shots} sequences={sequences} activeSequenceId={activeSequenceId} onSelectSequence={handleSelectSequence} onCreateSequence={handleCreateSequence} onRenameSequence={handleRenameSequence} onDeleteSequence={handleDeleteSequence} onReorder={handleReorderShots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} onToggleSeqSeedLock={handleToggleSeqSeedLock} onRandomizeSeqSeed={handleRandomizeSeqSeed} />
+          <Timeline shots={shots} sequences={sequences} activeSequenceId={activeSequenceId} onSelectSequence={handleSelectSequence} onCreateSequence={handleCreateSequence} onRenameSequence={handleRenameSequence} onDeleteSequence={handleDeleteSequence} onReorder={handleReorderShots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} onToggleSeqSeedLock={handleToggleSeqSeedLock} onRandomizeSeqSeed={handleRandomizeSeqSeed} continuityFlags={continuityFlags} />
         )}
       </div>
 
-      <BottomBar seed={resolvedSeed} seedLocked={project.seedLocked} seedScope={seedScope} onToggleSeedLock={handleToggleSeedLock} onRandomizeSeed={handleRandomizeSeed} cost="1 credit" />
+      <BottomBar seed={resolvedSeed} seedLocked={project.seedLocked} seedScope={seedScope} onToggleSeedLock={handleToggleSeedLock} onRandomizeSeed={handleRandomizeSeed} cost="1 credit" generatingStage={generatingStage} />
 
       {projectSettingsOpen && (
         <ProjectSettings project={project} onClose={() => setProjectSettingsOpen(false)} onUpdate={handleUpdateSettings} />
       )}
 
       {shortcutsHelpOpen && (
-        <ShortcutsHelp onClose={() => setShortcutsHelpOpen(false)} />
+        <ShortcutsHelp onClose={() => setShortcutsHelpOpen(false)} project={project} />
       )}
+
+      <OnboardingHighlight step={onboardingStep} />
 
       {creditDashboardOpen && (
         <CreditDashboard projectId={projectId} project={project} onClose={() => setCreditDashboardOpen(false)} onUpdateBudget={handleUpdateBudget} />

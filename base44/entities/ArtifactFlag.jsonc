@@ -1,0 +1,38 @@
+{
+  "name": "ArtifactFlag",
+  "type": "object",
+  "properties": {
+    "versionId": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "distorted_hands",
+        "face_below_threshold",
+        "unstable_text",
+        "temporal_flicker",
+        "frozen_frames"
+      ]
+    },
+    "frameNumber": {
+      "type": "number"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warn",
+        "error"
+      ],
+      "default": "warn"
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "versionId",
+    "type"
+  ]
+}

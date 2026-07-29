@@ -54,7 +54,7 @@ function Section({ title, onAdd, children }) {
     <div>
       <div className="flex items-center justify-between mb-2">
         <span className="panel-title">{title}</span>
-        {onAdd && <button onClick={onAdd} className="text-xs text-muted-foreground hover:text-accent transition-colors flex items-center gap-1"><Plus className="w-3 h-3" /> Add</button>}
+        {onAdd && <button onClick={onAdd} data-onboarding={title === 'Characters' ? 'add-character' : undefined} className="text-xs text-muted-foreground hover:text-accent transition-colors flex items-center gap-1"><Plus className="w-3 h-3" /> Add</button>}
       </div>
       <div className="space-y-1.5">{children}</div>
     </div>

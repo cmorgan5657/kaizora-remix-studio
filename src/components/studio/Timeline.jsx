@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Film, Clock, Plus, Layers, Trash2, Hash, Lock, Pencil, Shuffle } from 'lucide-react';
+import ContinuityRibbon from './ContinuityRibbon';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const STATUS_LABELS = { draft: 'Draft', ready: 'Ready', generating: 'Generating', complete: 'Complete', failed: 'Failed' };
@@ -11,7 +12,7 @@ const STATUS_BADGE = {
   failed: 'bg-destructive/10 text-destructive',
 };
 
-export default function Timeline({ shots, sequences, activeSequenceId, onSelectSequence, onCreateSequence, onRenameSequence, onDeleteSequence, onReorder, onSelectShot, selectedShotId, onToggleSeqSeedLock, onRandomizeSeqSeed }) {
+export default function Timeline({ shots, sequences, activeSequenceId, onSelectSequence, onCreateSequence, onRenameSequence, onDeleteSequence, onReorder, onSelectShot, selectedShotId, onToggleSeqSeedLock, onRandomizeSeqSeed, continuityFlags }) {
   const [editingSeqId, setEditingSeqId] = useState(null);
   const [editName, setEditName] = useState('');
 
@@ -151,6 +152,8 @@ export default function Timeline({ shots, sequences, activeSequenceId, onSelectS
           )}
         </Droppable>
       </DragDropContext>
+
+      <ContinuityRibbon shots={sequenceShots} flags={continuityFlags} />
     </div>
   );
 }

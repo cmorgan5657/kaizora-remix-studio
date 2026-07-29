@@ -1,0 +1,54 @@
+{
+  "name": "CharacterAdapter",
+  "type": "object",
+  "properties": {
+    "characterId": {
+      "type": "string"
+    },
+    "versionNumber": {
+      "type": "number",
+      "default": 1
+    },
+    "triggerToken": {
+      "type": "string"
+    },
+    "trainingStrength": {
+      "type": "string",
+      "enum": [
+        "Light",
+        "Standard",
+        "Strong"
+      ],
+      "default": "Standard"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "training",
+        "validating",
+        "complete",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "adapterUrl": {
+      "type": "string"
+    },
+    "validationScore": {
+      "type": "number",
+      "default": 0
+    },
+    "trainingCost": {
+      "type": "number",
+      "default": 0
+    },
+    "progress": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "characterId"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "MotionTransfer",
+  "type": "object",
+  "properties": {
+    "shotId": {
+      "type": "string"
+    },
+    "characterId": {
+      "type": "string"
+    },
+    "referenceClipUrl": {
+      "type": "string"
+    },
+    "extractedSkeletonUrl": {
+      "type": "string"
+    },
+    "extractionConfidence": {
+      "type": "number",
+      "default": 0
+    },
+    "transferBody": {
+      "type": "boolean",
+      "default": true
+    },
+    "transferGesture": {
+      "type": "boolean",
+      "default": false
+    },
+    "transferFacial": {
+      "type": "boolean",
+      "default": false
+    },
+    "transferGaze": {
+      "type": "boolean",
+      "default": false
+    },
+    "transferLocomotion": {
+      "type": "boolean",
+      "default": true
+    },
+    "transferRhythm": {
+      "type": "boolean",
+      "default": false
+    },
+    "transferStrength": {
+      "type": "number",
+      "default": 50
+    }
+  },
+  "required": [
+    "shotId"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "name": "SceneState",
+  "type": "object",
+  "properties": {
+    "sequenceId": {
+      "type": "string"
+    },
+    "afterShotId": {
+      "type": "string"
+    },
+    "charactersPresent": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "characterPositions": {
+      "type": "object"
+    },
+    "wardrobeStates": {
+      "type": "object"
+    },
+    "emotionalBeats": {
+      "type": "object"
+    },
+    "propsPresent": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "timeOfDay": {
+      "type": "string"
+    },
+    "weather": {
+      "type": "string"
+    },
+    "lastFrameUrl": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sequenceId"
+  ]
+}

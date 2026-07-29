@@ -1,0 +1,49 @@
+{
+  "name": "TextElement",
+  "type": "object",
+  "properties": {
+    "shotId": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "font": {
+      "type": "string",
+      "default": "Inter"
+    },
+    "fontSize": {
+      "type": "number",
+      "default": 24
+    },
+    "color": {
+      "type": "string",
+      "default": "#FFFFFF"
+    },
+    "positionX": {
+      "type": "number",
+      "default": 50
+    },
+    "positionY": {
+      "type": "number",
+      "default": 50
+    },
+    "trackingAnchorX": {
+      "type": "number"
+    },
+    "trackingAnchorY": {
+      "type": "number"
+    },
+    "startTime": {
+      "type": "number",
+      "default": 0
+    },
+    "endTime": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "shotId",
+    "content"
+  ]
+}

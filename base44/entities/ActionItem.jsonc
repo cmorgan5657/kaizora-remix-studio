@@ -1,0 +1,40 @@
+{
+  "name": "ActionItem",
+  "type": "object",
+  "properties": {
+    "shotId": {
+      "type": "string"
+    },
+    "characterId": {
+      "type": "string"
+    },
+    "orderIndex": {
+      "type": "number",
+      "default": 0
+    },
+    "actionName": {
+      "type": "string"
+    },
+    "actionCategory": {
+      "type": "string",
+      "enum": [
+        "Locomotion",
+        "Stationary",
+        "Upper body",
+        "Interaction",
+        "Expressive"
+      ]
+    },
+    "startTime": {
+      "type": "number",
+      "default": 0
+    },
+    "parameters": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "shotId",
+    "actionName"
+  ]
+}

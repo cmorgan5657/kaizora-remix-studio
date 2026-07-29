@@ -1,0 +1,36 @@
+{
+  "name": "ConsistencyScore",
+  "type": "object",
+  "properties": {
+    "versionId": {
+      "type": "string"
+    },
+    "characterIdentityMean": {
+      "type": "number"
+    },
+    "characterIdentityMin": {
+      "type": "number"
+    },
+    "styleScore": {
+      "type": "number"
+    },
+    "environmentScore": {
+      "type": "number"
+    },
+    "lightingScore": {
+      "type": "number"
+    },
+    "temporalStability": {
+      "type": "number"
+    },
+    "overallScore": {
+      "type": "number"
+    },
+    "worstFrames": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "versionId"
+  ]
+}

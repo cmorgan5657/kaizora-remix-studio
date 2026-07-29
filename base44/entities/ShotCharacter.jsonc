@@ -1,0 +1,47 @@
+{
+  "name": "ShotCharacter",
+  "type": "object",
+  "properties": {
+    "shotId": {
+      "type": "string"
+    },
+    "characterId": {
+      "type": "string"
+    },
+    "wardrobeStateId": {
+      "type": "string"
+    },
+    "stageX": {
+      "type": "number"
+    },
+    "stageY": {
+      "type": "number"
+    },
+    "distancePlane": {
+      "type": "string",
+      "enum": [
+        "Foreground",
+        "Midground",
+        "Background"
+      ],
+      "default": "Midground"
+    },
+    "facing": {
+      "type": "string"
+    },
+    "relationship": {
+      "type": "string",
+      "enum": [
+        "Facing Each Other",
+        "Side by Side",
+        "Back to Back",
+        "One Behind"
+      ],
+      "default": "Side by Side"
+    }
+  },
+  "required": [
+    "shotId",
+    "characterId"
+  ]
+}
