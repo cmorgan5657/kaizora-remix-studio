@@ -9,6 +9,7 @@ import CameraControls from './CameraControls';
 import MotionControls from './MotionControls';
 import ABCompare from './ABCompare';
 import PresetBar from './PresetBar';
+import ConsistencyInspector from './ConsistencyInspector';
 
 const TABS = ['INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
@@ -83,6 +84,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
               <div className="text-sm text-foreground">Shot generated</div>
               <div className="text-xs text-muted-foreground">Version {generation.version.versionNumber} · {generation.version.creditCost} credits · Seed {generation.version.resolvedSeed}</div>
               <div className="text-xs text-muted-foreground mt-1">Quality: {generation.version.qualityTier}</div>
+              {generation.scores && <ConsistencyInspector scores={generation.scores} remedies={generation.remedies || []} />}
             </>
           ) : generation?.status === 'failed' ? (
             <>

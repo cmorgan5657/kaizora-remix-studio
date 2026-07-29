@@ -21,7 +21,7 @@ export default function Studio() {
   const [shots, setShots] = useState([]);
   const [sequences, setSequences] = useState([]);
   const [resolvedSeed, setResolvedSeed] = useState(null);
-  const [generation, setGeneration] = useState({ status: 'idle', stages: {}, job: null, version: null, previousVersion: null, error: null });
+  const [generation, setGeneration] = useState({ status: 'idle', stages: {}, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
   const [presets, setPresets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeWorkspace, setActiveWorkspace] = useState('studio');
@@ -110,7 +110,7 @@ export default function Studio() {
   const handleGenerate = async (payload, qualityTier) => {
     const seed = payload.seed ?? resolvedSeed ?? Math.floor(Math.random() * 1000000);
     const finalPayload = { ...payload, seed };
-    setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, error: null });
+    setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
     try {
       let seq = sequences[0];
       if (!seq) {
@@ -119,10 +119,14 @@ export default function Studio() {
       }
       const shot = await base44.entities.Shot.create({ sequenceId: seq.id, projectId, name: `Shot ${shots.length + 1}`, intentText: payload.positivePrompt, orderIndex: shots.length, status: 'generating', qualityTier, shotSeed: seed, seedLocked: project.seedLocked });
       setShots((prev) => [...prev, shot]);
-      const result = await runPipeline({ projectId, shotId: shot.id, payload: finalPayload, qualityTier, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
+      const activeCharacter = characters.find((c) => c.isActive);
+      const activeStyle = styleLocks.find((l) => l.isActive);
+      const activeEnv = envLocks.find((l) => l.isActive);
+      const activeLight = lightingLocks.find((l) => l.isActive);
+      const result = await runPipeline({ projectId, shotId: shot.id, payload: finalPayload, qualityTier, character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
       await base44.entities.Shot.update(shot.id, { status: 'complete', currentVersionId: result.version.id });
       setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
-      setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version, previousVersion: prev.version }));
+      setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version, scores: result.scores, remedies: result.remedies, previousVersion: prev.version }));
     } catch (error) {
       setGeneration((prev) => ({ ...prev, status: 'failed', error: error.message }));
     }

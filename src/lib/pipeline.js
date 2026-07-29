@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { computeConsistencyScores, getRemedies } from './consistencyScorer';
 
 export const PIPELINE_STAGES = [
   { id: 'resolve', name: 'Resolve', duration: 400 },
@@ -11,7 +12,7 @@ export const PIPELINE_STAGES = [
 
 export const QUALITY_COSTS = { Draft: 1, Standard: 3, Final: 8 };
 
-export async function runPipeline({ projectId, shotId, payload, qualityTier, onStageUpdate, onCreditUpdate }) {
+export async function runPipeline({ projectId, shotId, payload, qualityTier, character, styleLock, envLock, lightingLock, onStageUpdate, onCreditUpdate }) {
   const creditsCharged = QUALITY_COSTS[qualityTier] || 1;
 
   let job = await base44.entities.GenerationJob.create({
@@ -27,6 +28,7 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, onS
 
   let creditsDeducted = false;
   let currentStageId = 'resolve';
+  let measureResult = { scores: null, remedies: [] };
 
   try {
     for (let i = 0; i < PIPELINE_STAGES.length; i++) {
@@ -48,6 +50,11 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, onS
         onCreditUpdate(newBalance);
       }
 
+      if (stage.id === 'measure') {
+        measureResult.scores = computeConsistencyScores({ character, styleLock, envLock, lightingLock, qualityTier, seed: payload.seed });
+        measureResult.remedies = getRemedies(measureResult.scores, character, styleLock, envLock);
+      }
+
       onStageUpdate(stage.id, 'complete');
     }
 
@@ -67,7 +74,7 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, onS
 
     await base44.entities.GenerationJob.update(job.id, { status: 'complete', progress: 100, versionId: version.id, completedAt: new Date().toISOString() });
 
-    return { job, version };
+    return { job, version, scores: measureResult.scores, remedies: measureResult.remedies };
   } catch (error) {
     if (creditsDeducted) {
       const proj = await base44.entities.Project.get(projectId);
