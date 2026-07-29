@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { HelpCircle, Download, Check, Loader2 } from 'lucide-react';
+import { HelpCircle, Download, Check, Loader2, Settings } from 'lucide-react';
 
 const WORKSPACES = [
   { id: 'studio', label: 'STUDIO' },
@@ -8,7 +8,7 @@ const WORKSPACES = [
   { id: 'sequence', label: 'SEQUENCE' },
 ];
 
-export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving, onOpenCredits, onExport, canExport, exporting }) {
+export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving, onOpenCredits, onExport, canExport, exporting, onOpenSettings }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(project?.name || '');
   const inputRef = useRef(null);
@@ -67,6 +67,9 @@ export default function TopBar({ project, onRename, activeWorkspace, onWorkspace
 
       <div className="flex items-center gap-3 flex-1 justify-end">
         <button onClick={onOpenCredits} className="text-xs text-secondary-foreground hover:text-accent transition-colors tabular-nums">{project?.creditBalance ?? 0} credits</button>
+        <button onClick={onOpenSettings} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Project settings">
+          <Settings className="w-4 h-4" />
+        </button>
         <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
           <HelpCircle className="w-4 h-4" />
         </button>

@@ -16,6 +16,14 @@ import SurgicalRevisionBar from './SurgicalRevisionBar';
 
 const TABS = ['INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
+const ASPECT_STYLE = {
+  '16:9': 'aspect-video max-w-3xl',
+  '9:16': 'aspect-[9/16] max-w-xs',
+  '2.39:1': 'aspect-[2.39/1] max-w-3xl',
+  '1:1': 'aspect-square max-w-md',
+  '4:5': 'aspect-[4/5] max-w-sm',
+};
+
 const QUALITY_MODES = [
   { id: 'Draft', cost: '1 credit' },
   { id: 'Standard', cost: '3 credits' },
@@ -82,7 +90,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex items-center justify-center p-6 min-h-0">
-        <div className="relative w-full max-w-3xl aspect-video bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2 overflow-y-auto scrollbar-thin p-4">
+        <div className={`relative w-full ${ASPECT_STYLE[project?.aspectRatio] || 'aspect-video max-w-3xl'} bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2 overflow-y-auto scrollbar-thin p-4`}>
           {generation?.version && generation?.previousVersion && (
             <button onClick={() => setAbCompare(!abCompare)} className={`absolute top-2 right-2 z-10 px-2 py-1 text-xs rounded transition-colors ${abCompare ? 'bg-accent text-accent-foreground' : 'bg-card-raised border border-border text-muted-foreground hover:text-foreground'}`}>
               A/B Compare

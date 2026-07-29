@@ -11,6 +11,7 @@ import ShotsVersionsPanel from '@/components/studio/ShotsVersionsPanel';
 import LockEditorDialog from '@/components/studio/LockEditorDialog';
 import Timeline from '@/components/studio/Timeline';
 import CreditDashboard from '@/components/studio/CreditDashboard';
+import ProjectSettings from '@/components/studio/ProjectSettings';
 import { runPipeline } from '@/lib/pipeline';
 
 export default function Studio() {
@@ -33,6 +34,7 @@ export default function Studio() {
   const [editingLock, setEditingLock] = useState(null);
   const [creditDashboardOpen, setCreditDashboardOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [projectSettingsOpen, setProjectSettingsOpen] = useState(false);
   const [selectedShotId, setSelectedShotId] = useState(null);
   const [activeSequenceId, setActiveSequenceId] = useState(null);
   const [versions, setVersions] = useState([]);
@@ -179,6 +181,10 @@ export default function Studio() {
     }
   };
 
+  const handleUpdateSettings = async (data) => {
+    await updateProject(data);
+  };
+
   const handleExport = () => {
     const shot = shots.find((s) => s.id === selectedShotId);
     if (!shot) return;
@@ -273,7 +279,7 @@ export default function Studio() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} />
+      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} onOpenSettings={() => setProjectSettingsOpen(true)} />
 
       <div className="flex-1 flex overflow-hidden relative">
         {activeWorkspace === 'studio' ? (
@@ -334,6 +340,10 @@ export default function Studio() {
       </div>
 
       <BottomBar seed={resolvedSeed} seedLocked={project.seedLocked} seedScope={seedScope} onToggleSeedLock={handleToggleSeedLock} onRandomizeSeed={handleRandomizeSeed} cost="1 credit" />
+
+      {projectSettingsOpen && (
+        <ProjectSettings project={project} onClose={() => setProjectSettingsOpen(false)} onUpdate={handleUpdateSettings} />
+      )}
 
       {creditDashboardOpen && (
         <CreditDashboard projectId={projectId} project={project} onClose={() => setCreditDashboardOpen(false)} onUpdateBudget={handleUpdateBudget} />
