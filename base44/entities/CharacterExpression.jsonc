@@ -1,0 +1,27 @@
+{
+  "name": "CharacterExpression",
+  "type": "object",
+  "properties": {
+    "characterId": {
+      "type": "string"
+    },
+    "expressionName": {
+      "type": "string"
+    },
+    "intensity": {
+      "type": "number",
+      "default": 50
+    },
+    "imageUrl": {
+      "type": "string"
+    },
+    "isGenerated": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "characterId",
+    "expressionName"
+  ]
+}

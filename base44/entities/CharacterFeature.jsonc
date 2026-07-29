@@ -1,0 +1,29 @@
+{
+  "name": "CharacterFeature",
+  "type": "object",
+  "properties": {
+    "characterId": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "isCritical": {
+      "type": "boolean",
+      "default": false
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "distinguishing",
+        "neverInclude"
+      ],
+      "default": "distinguishing"
+    }
+  },
+  "required": [
+    "characterId",
+    "description",
+    "type"
+  ]
+}

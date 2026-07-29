@@ -1,0 +1,62 @@
+{
+  "name": "CharacterReference",
+  "type": "object",
+  "properties": {
+    "characterId": {
+      "type": "string"
+    },
+    "slotGroup": {
+      "type": "string",
+      "enum": [
+        "angle",
+        "distance",
+        "lighting"
+      ]
+    },
+    "slotName": {
+      "type": "string"
+    },
+    "imageUrl": {
+      "type": "string"
+    },
+    "isGenerated": {
+      "type": "boolean",
+      "default": false
+    },
+    "qcStatus": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "warn",
+        "block"
+      ],
+      "default": "pass"
+    },
+    "qcMessages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "phash": {
+      "type": "string"
+    },
+    "stackOrder": {
+      "type": "number"
+    },
+    "stackWeight": {
+      "type": "number",
+      "default": 100
+    },
+    "includedInStack": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "characterId",
+    "slotGroup",
+    "slotName",
+    "imageUrl"
+  ]
+}

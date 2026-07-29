@@ -1,0 +1,29 @@
+{
+  "name": "WardrobeState",
+  "type": "object",
+  "properties": {
+    "characterId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "referenceImages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "isDefault": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "characterId",
+    "name"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "ContinuityRule",
+  "type": "object",
+  "properties": {
+    "characterId": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "Must Never Change",
+        "Should Stay Consistent",
+        "Flexible"
+      ],
+      "default": "Should Stay Consistent"
+    }
+  },
+  "required": [
+    "characterId",
+    "description"
+  ]
+}

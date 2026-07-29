@@ -1,0 +1,36 @@
+{
+  "name": "MotionProfile",
+  "type": "object",
+  "properties": {
+    "characterId": {
+      "type": "string"
+    },
+    "defaultPosture": {
+      "type": "string"
+    },
+    "defaultEnergy": {
+      "type": "number",
+      "default": 50
+    },
+    "defaultWeight": {
+      "type": "number",
+      "default": 50
+    },
+    "defaultTension": {
+      "type": "number",
+      "default": 50
+    },
+    "defaultGestureFrequency": {
+      "type": "string"
+    },
+    "defaultGestureStyle": {
+      "type": "string"
+    },
+    "referenceClipUrl": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "characterId"
+  ]
+}

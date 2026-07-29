@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Monitor, Users, Film } from 'lucide-react';
+import { Monitor, Film } from 'lucide-react';
 import TopBar from '@/components/studio/TopBar';
+import CharacterWorkspace from '@/components/characters/CharacterWorkspace';
 import BottomBar from '@/components/studio/BottomBar';
 import ProjectStatePanel from '@/components/studio/ProjectStatePanel';
 import ShotWorkspace from '@/components/studio/ShotWorkspace';
@@ -139,10 +140,17 @@ export default function Studio() {
               </>
             )}
           </>
+        ) : activeWorkspace === 'characters' ? (
+          <CharacterWorkspace
+            projectId={projectId}
+            characters={characters}
+            onUpdateCharacter={(updated) => setCharacters((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))}
+            onCreateCharacter={(created) => setCharacters((prev) => [...prev, created])}
+          />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-            {activeWorkspace === 'characters' ? <Users className="w-12 h-12" /> : <Film className="w-12 h-12" />}
-            <div className="text-sm">{activeWorkspace === 'characters' ? 'Character workspace' : 'Sequence workspace'}</div>
+            <Film className="w-12 h-12" />
+            <div className="text-sm">Sequence workspace</div>
             <div className="text-xs">Available in a later build phase.</div>
           </div>
         )}
