@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Film, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Film, Loader2, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import { compilePrompt } from '@/lib/compiler';
 import { parseIntent } from '@/lib/intentParser';
 import IntentChips from './IntentChips';
@@ -21,7 +21,7 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, presets, onSavePreset, selectedShot }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot }) {
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
   const [intentText, setIntentText] = useState('');
@@ -31,7 +31,11 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   const [timing, setTiming] = useState({ duration: 5, fps: 24, resolution: '1080p', continueFromPrevious: true, anchorStrength: 60 });
 
   useEffect(() => {
-    if (selectedShot) setIntentText(selectedShot.intentText || '');
+    if (!selectedShot) return;
+    setIntentText(selectedShot.intentText || '');
+    setCamera({ shotType: selectedShot.shotType || 'Medium', cameraMove: selectedShot.cameraMove || 'Static', cameraSpeed: selectedShot.cameraSpeed ?? 50, cameraDistance: selectedShot.cameraDistance ?? 50, cameraEasing: selectedShot.cameraEasing || 'Linear', cameraStartDelay: selectedShot.cameraStartDelay ?? 0, cameraPath: selectedShot.cameraPath || [] });
+    setMotion({ motionMode: selectedShot.motionMode || 'simple', posture: selectedShot.posture || 'Standing', energy: selectedShot.energy ?? 50, weight: selectedShot.weight ?? 50, tension: selectedShot.tension ?? 50, bodyFacing: selectedShot.bodyFacing || 'Front', handState: selectedShot.handState || 'At sides', armPosition: selectedShot.armPosition || 'At sides', headTiltPitch: selectedShot.headTiltPitch ?? 0, headTiltRoll: selectedShot.headTiltRoll ?? 0, gestureFrequency: selectedShot.gestureFrequency || 'Occasional', gestureStyle: selectedShot.gestureStyle || 'Natural', propInteraction: selectedShot.propInteraction || 'None', gazeTarget: selectedShot.gazeTarget || 'Camera', eyeContactDuration: selectedShot.eyeContactDuration || 'Brief', blinkRate: selectedShot.blinkRate || 'Natural' });
+    setTiming({ duration: selectedShot.duration ?? 5, fps: selectedShot.fps ?? 24, resolution: selectedShot.resolution || '1080p', continueFromPrevious: selectedShot.continueFromPrevious ?? true, anchorStrength: selectedShot.anchorStrength ?? 60 });
   }, [selectedShot?.id]);
 
   const parsedIntent = useMemo(() => parseIntent(intentText), [intentText]);
@@ -69,7 +73,8 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     setIntentText(sentences.filter((s) => !s.toLowerCase().includes(word)).join(' '));
   };
 
-  const handleGenerate = () => onGenerate(compiledPayload, quality);
+  const handleGenerate = () => onGenerate(compiledPayload, quality, camera, motion, timing);
+  const handleRegenerate = () => onRegenerate?.(compiledPayload, quality, camera, motion, timing);
   const isGenerating = generation?.status === 'running';
 
   return (
@@ -168,9 +173,16 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
         <div className="text-xs text-muted-foreground">
           Cost: <span className="text-secondary-foreground tabular-nums">{QUALITY_MODES.find((q) => q.id === quality)?.cost}</span>
         </div>
-        <button onClick={handleGenerate} disabled={isGenerating} className="px-5 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-          {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : 'Generate'}
-        </button>
+        <div className="flex items-center gap-2">
+          {selectedShot && (
+            <button onClick={handleRegenerate} disabled={isGenerating} className="px-4 py-2 text-sm font-medium text-secondary-foreground bg-card-raised border border-border rounded-md hover:border-border-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+              <RefreshCw className="w-4 h-4" /> Regenerate
+            </button>
+          )}
+          <button onClick={handleGenerate} disabled={isGenerating} className="px-5 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : 'Generate'}
+          </button>
+        </div>
       </div>
     </div>
   );

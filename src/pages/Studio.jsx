@@ -31,6 +31,7 @@ export default function Studio() {
   const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
   const [editingLock, setEditingLock] = useState(null);
   const [selectedShotId, setSelectedShotId] = useState(null);
+  const [versions, setVersions] = useState([]);
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -64,6 +65,11 @@ export default function Studio() {
   }, [projectId]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  useEffect(() => {
+    if (!selectedShotId) { setVersions([]); return; }
+    base44.entities.ShotVersion.filter({ shotId: selectedShotId }).then(setVersions).catch(() => {});
+  }, [selectedShotId]);
 
   const updateProject = async (data) => {
     setSaving(true);
@@ -109,7 +115,7 @@ export default function Studio() {
     if (lock) setEditingLock({ type, lock });
   };
 
-  const handleGenerate = async (payload, qualityTier) => {
+  const handleGenerate = async (payload, qualityTier, camera, motion, timing) => {
     const seed = payload.seed ?? resolvedSeed ?? Math.floor(Math.random() * 1000000);
     const finalPayload = { ...payload, seed };
     setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
@@ -119,8 +125,9 @@ export default function Studio() {
         seq = await base44.entities.Sequence.create({ projectId, name: 'Main Sequence', orderIndex: 0 });
         setSequences([seq]);
       }
-      const shot = await base44.entities.Shot.create({ sequenceId: seq.id, projectId, name: `Shot ${shots.length + 1}`, intentText: payload.positivePrompt, orderIndex: shots.length, status: 'generating', qualityTier, shotSeed: seed, seedLocked: project.seedLocked });
+      const shot = await base44.entities.Shot.create({ sequenceId: seq.id, projectId, name: `Shot ${shots.length + 1}`, intentText: payload.positivePrompt, orderIndex: shots.length, status: 'generating', qualityTier, shotSeed: seed, seedLocked: project.seedLocked, ...camera, ...motion, ...timing });
       setShots((prev) => [...prev, shot]);
+      setSelectedShotId(shot.id);
       const activeCharacter = characters.find((c) => c.isActive);
       const activeStyle = styleLocks.find((l) => l.isActive);
       const activeEnv = envLocks.find((l) => l.isActive);
@@ -140,6 +147,33 @@ export default function Studio() {
   };
 
   const handleSelectShot = (shotId) => setSelectedShotId(shotId);
+
+  const handleRegenerate = async (payload, qualityTier, camera, motion, timing) => {
+    if (!selectedShotId) return;
+    const seed = payload.seed ?? resolvedSeed ?? Math.floor(Math.random() * 1000000);
+    const finalPayload = { ...payload, seed };
+    setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
+    try {
+      await base44.entities.Shot.update(selectedShotId, { ...camera, ...motion, ...timing, status: 'generating', qualityTier, shotSeed: seed });
+      setShots((prev) => prev.map((s) => (s.id === selectedShotId ? { ...s, ...camera, ...motion, ...timing, status: 'generating', qualityTier, shotSeed: seed } : s)));
+      const activeCharacter = characters.find((c) => c.isActive);
+      const activeStyle = styleLocks.find((l) => l.isActive);
+      const activeEnv = envLocks.find((l) => l.isActive);
+      const activeLight = lightingLocks.find((l) => l.isActive);
+      const result = await runPipeline({ projectId, shotId: selectedShotId, payload: finalPayload, qualityTier, character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
+      await base44.entities.Shot.update(selectedShotId, { status: 'complete', currentVersionId: result.version.id });
+      setShots((prev) => prev.map((s) => (s.id === selectedShotId ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
+      base44.entities.ShotVersion.filter({ shotId: selectedShotId }).then(setVersions).catch(() => {});
+      setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version, scores: result.scores, remedies: result.remedies, previousVersion: prev.version }));
+    } catch (error) {
+      setGeneration((prev) => ({ ...prev, status: 'failed', error: error.message }));
+    }
+  };
+
+  const handleToggleFavorite = async (versionId, currentFavorite) => {
+    await base44.entities.ShotVersion.update(versionId, { isFavorite: !currentFavorite });
+    setVersions((prev) => prev.map((v) => (v.id === versionId ? { ...v, isFavorite: !currentFavorite } : v)));
+  };
   const handleReorderShots = async (reordered) => {
     setShots(reordered);
     await Promise.all(reordered.map((s) => base44.entities.Shot.update(s.id, { orderIndex: s.orderIndex })));
@@ -189,11 +223,11 @@ export default function Studio() {
                   <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                 ))}
               </div>
-              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} />
+              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} />
             </main>
 
             <aside className="w-[340px] flex-shrink-0 border-l border-border max-[1399px]:hidden overflow-hidden">
-              <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} />
+              <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} />
             </aside>
 
             <button onClick={() => setLeftDrawerOpen(true)} className="hidden max-[1099px]:flex absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 items-center justify-center bg-panel border border-border border-l-0 rounded-r-md text-muted-foreground hover:text-foreground transition-colors z-30">›</button>
@@ -208,7 +242,7 @@ export default function Studio() {
             {rightDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setRightDrawerOpen(false)} />
-                <div className="absolute right-0 top-0 bottom-0 w-[340px] z-50 border-l border-border overflow-hidden"><ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} /></div>
+                <div className="absolute right-0 top-0 bottom-0 w-[340px] z-50 border-l border-border overflow-hidden"><ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} /></div>
               </>
             )}
           </>
