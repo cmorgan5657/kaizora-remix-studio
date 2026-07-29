@@ -1,6 +1,7 @@
 import { base44 } from '@/api/base44Client';
 import { computeConsistencyScores, getRemedies } from './consistencyScorer';
 import { generateVideo, restoreFaces, upscale, colorGrade, detectArtifacts } from './integrations';
+import { analyzeReferences, compileReferenceAnalysis } from './referenceAnalyzer';
 
 export const PIPELINE_STAGES = [
   { id: 'resolve', name: 'Resolving settings', duration: 400 },
@@ -25,6 +26,7 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, cha
   let currentStageId = 'resolve';
   let measureResult = { scores: null, remedies: [], artifacts: [] };
   let videoUrl = null;
+  let enhancedPayload = payload;
 
   try {
     for (let i = 0; i < PIPELINE_STAGES.length; i++) {
@@ -38,6 +40,21 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, cha
       }
 
       if (stage.id === 'precondition') {
+        if (payload.references?.length > 0) {
+          try {
+            const analyses = await analyzeReferences(payload.references);
+            const analysisText = compileReferenceAnalysis(analyses);
+            if (analysisText) {
+              enhancedPayload = {
+                ...payload,
+                positivePrompt: `${payload.positivePrompt}. REFERENCE ANALYSIS (SOURCE OF TRUTH): ${analysisText}`,
+                referenceAnalysis: analyses,
+              };
+            }
+          } catch (e) {
+            // Analysis failed — proceed with IP-Adapter conditioning only
+          }
+        }
         await new Promise((r) => setTimeout(r, stage.duration));
       }
 
@@ -51,7 +68,7 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, cha
         onCreditUpdate(newBalance);
 
         // INTEGRATION POINT: call video generation adapter
-        const result = await generateVideo({ ...payload, qualityTier });
+        const result = await generateVideo({ ...enhancedPayload, qualityTier });
         videoUrl = result.videoUrl;
       }
 
@@ -88,7 +105,7 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, cha
     const version = await base44.entities.ShotVersion.create({
       shotId, versionNumber, videoUrl,
       thumbnailUrl: `https://cdn.kaizora.studio/shots/${shotId}/v${versionNumber}.jpg`,
-      resolvedPayload: payload, resolvedSeed: payload.seed, creditCost: creditsCharged, qualityTier,
+      resolvedPayload: enhancedPayload, resolvedSeed: enhancedPayload.seed, creditCost: creditsCharged, qualityTier,
     });
 
     // Persist consistency scores
