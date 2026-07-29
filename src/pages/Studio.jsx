@@ -131,7 +131,7 @@ export default function Studio() {
                   <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                 ))}
               </div>
-              <ShotWorkspace />
+              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} />
             </main>
 
             <aside className="w-[340px] flex-shrink-0 border-l border-border max-[1399px]:hidden overflow-hidden">

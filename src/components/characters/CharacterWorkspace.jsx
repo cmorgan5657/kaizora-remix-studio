@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { User, Plus } from 'lucide-react';
-import { computeSheetData, composeIdentityStatement, ANGLE_SLOTS } from '@/lib/characterCompiler';
+import { computeSheetData, composeIdentityStatement, composeNegativePrompt, ANGLE_SLOTS } from '@/lib/characterCompiler';
 import { runQC } from '@/lib/imageQC';
 import CharacterNav from './CharacterNav';
 import CharacterCardPreview from './CharacterCardPreview';
@@ -51,6 +51,16 @@ export default function CharacterWorkspace({ projectId, characters, onUpdateChar
     base44.entities.Character.update(selected.id, { sheetStrength: sheetData.strength }).catch(() => {});
     onUpdateCharacter({ ...selected, sheetStrength: sheetData.strength });
   }, [sheetData.strength, selected?.id]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const statement = composeIdentityStatement(selected, features);
+    const negative = composeNegativePrompt(features);
+    if (statement !== (selected.identityStatement || '') || negative !== (selected.negativePromptFragment || '')) {
+      base44.entities.Character.update(selected.id, { identityStatement: statement, negativePromptFragment: negative }).catch(() => {});
+      onUpdateCharacter({ ...selected, identityStatement: statement, negativePromptFragment: negative });
+    }
+  }, [features, selected?.name, selected?.ageRange, selected?.genderPresentation, selected?.height, selected?.build, selected?.skinToneDescription, selected?.hairColor, selected?.hairLength, selected?.hairTexture, selected?.hairStyle, selected?.eyeColor, selected?.eyeShape, selected?.facialStructure, selected?.id]);
 
   const updateCharacter = (data) => { onUpdateCharacter({ ...selected, ...data }); base44.entities.Character.update(selected.id, data).catch(() => {}); };
   const addFeature = async (type) => { const f = await base44.entities.CharacterFeature.create({ characterId: selectedId, description: '', type, isCritical: false }); setFeatures(p => [...p, f]); };

@@ -1,5 +1,9 @@
-import { useState } from 'react';
-import { Film, Sparkles, Wrench } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Film } from 'lucide-react';
+import { compilePrompt } from '@/lib/compiler';
+import { parseIntent } from '@/lib/intentParser';
+import IntentChips from './IntentChips';
+import PromptInspector from './PromptInspector';
 
 const TABS = ['INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
@@ -9,9 +13,42 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace() {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks }) {
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
+  const [intentText, setIntentText] = useState('');
+
+  const parsedIntent = useMemo(() => parseIntent(intentText), [intentText]);
+
+  const compiledPayload = useMemo(() => {
+    const activeCharacter = characters?.find((c) => c.isActive);
+    const activeStyle = styleLocks?.find((l) => l.isActive);
+    const activeEnv = envLocks?.find((l) => l.isActive);
+    const activeLight = lightingLocks?.find((l) => l.isActive);
+    return compilePrompt({
+      intent: intentText,
+      character: activeCharacter ? { identityStatement: activeCharacter.identityStatement, negativePromptFragment: activeCharacter.negativePromptFragment, tier: activeCharacter.tier, triggerToken: activeCharacter.id ? `kzr_char_${activeCharacter.id.slice(-4)}` : null } : null,
+      style: activeStyle ? { colorGrade: activeStyle.colorGrade, filmStock: activeStyle.filmStock, lens: activeStyle.lens } : null,
+      environment: activeEnv ? { description: activeEnv.description, interiorExterior: activeEnv.interiorExterior, scale: activeEnv.scale } : null,
+      lighting: activeLight ? { mood: activeLight.mood, timeOfDay: activeLight.timeOfDay, keyDirection: activeLight.keyDirection } : null,
+      seed: project?.seedLocked ? project.projectSeed : null,
+      aspectRatio: project?.aspectRatio || '16:9',
+      lockStrengths: { character: activeCharacter?.lockStrength, style: activeStyle?.lockStrength, environment: activeEnv?.lockStrength, lighting: activeLight?.lockStrength },
+    });
+  }, [intentText, characters, styleLocks, envLocks, lightingLocks, project]);
+
+  const removeChip = (index) => {
+    const chip = parsedIntent.chips[index];
+    if (!chip) return;
+    setIntentText((prev) => prev.replace(new RegExp(chip.value, 'i'), '').replace(/\s+/g, ' ').trim());
+  };
+
+  const removeConflict = () => {
+    if (!parsedIntent.conflict) return;
+    const word = parsedIntent.conflict.word;
+    const sentences = intentText.split(/(?<=[.!?])\s+/);
+    setIntentText(sentences.filter((s) => !s.toLowerCase().includes(word)).join(' '));
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -39,17 +76,17 @@ export default function ShotWorkspace() {
         </div>
         <div className="p-4 min-h-[120px]">
           {activeTab === 'INTENT' && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="text-xs text-muted-foreground">Describe what happens in this shot. Your character and locks are applied automatically.</div>
               <textarea
+                value={intentText}
+                onChange={(e) => setIntentText(e.target.value)}
                 placeholder="e.g. She walks toward the camera, stops, and looks up at the sky."
                 className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring resize-none"
                 rows={2}
               />
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Sparkles className="w-3 h-3" />
-                Compiled prompt inspector appears here once locks are active.
-              </div>
+              <IntentChips chips={parsedIntent.chips} conflict={parsedIntent.conflict} onRemoveChip={removeChip} onRemoveConflict={removeConflict} />
+              <PromptInspector payload={compiledPayload} />
             </div>
           )}
           {activeTab !== 'INTENT' && (
