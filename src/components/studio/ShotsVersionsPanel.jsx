@@ -1,6 +1,6 @@
 import { Plus, Film, Clock } from 'lucide-react';
 
-export default function ShotsVersionsPanel({ shots }) {
+export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId }) {
   return (
     <div className="h-full flex flex-col bg-panel">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -17,7 +17,7 @@ export default function ShotsVersionsPanel({ shots }) {
           </div>
         ) : (
           shots.map((shot) => (
-            <div key={shot.id} className="p-2 rounded-md bg-card border border-border hover:border-border-active transition-colors cursor-pointer">
+            <div key={shot.id} onClick={() => onSelectShot?.(shot.id)} className={`p-2 rounded-md bg-card border transition-colors cursor-pointer ${selectedShotId === shot.id ? 'border-accent' : 'border-border hover:border-border-active'}`}>
               <div className="flex items-center gap-2">
                 <div className="w-14 h-10 rounded bg-card-raised flex items-center justify-center flex-shrink-0">
                   <Film className="w-3.5 h-3.5 text-muted-foreground" />

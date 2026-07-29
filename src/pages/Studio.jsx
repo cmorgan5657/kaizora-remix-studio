@@ -9,6 +9,7 @@ import ProjectStatePanel from '@/components/studio/ProjectStatePanel';
 import ShotWorkspace from '@/components/studio/ShotWorkspace';
 import ShotsVersionsPanel from '@/components/studio/ShotsVersionsPanel';
 import LockEditorDialog from '@/components/studio/LockEditorDialog';
+import Timeline from '@/components/studio/Timeline';
 import { runPipeline } from '@/lib/pipeline';
 
 export default function Studio() {
@@ -29,6 +30,7 @@ export default function Studio() {
   const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
   const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
   const [editingLock, setEditingLock] = useState(null);
+  const [selectedShotId, setSelectedShotId] = useState(null);
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -137,6 +139,13 @@ export default function Studio() {
     setPresets((prev) => [...prev, preset]);
   };
 
+  const handleSelectShot = (shotId) => setSelectedShotId(shotId);
+  const handleReorderShots = async (reordered) => {
+    setShots(reordered);
+    await Promise.all(reordered.map((s) => base44.entities.Shot.update(s.id, { orderIndex: s.orderIndex })));
+  };
+  const selectedShot = shots.find((s) => s.id === selectedShotId) || null;
+
   const panelProps = { characters, styleLocks, envLocks, lightingLocks, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock, onEditLock: handleEditLock, onToggleLockActive: handleToggleLockActive };
 
   if (loading) {
@@ -180,11 +189,11 @@ export default function Studio() {
                   <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                 ))}
               </div>
-              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} presets={presets} onSavePreset={handleSavePreset} />
+              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} />
             </main>
 
             <aside className="w-[340px] flex-shrink-0 border-l border-border max-[1399px]:hidden overflow-hidden">
-              <ShotsVersionsPanel shots={shots} />
+              <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} />
             </aside>
 
             <button onClick={() => setLeftDrawerOpen(true)} className="hidden max-[1099px]:flex absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 items-center justify-center bg-panel border border-border border-l-0 rounded-r-md text-muted-foreground hover:text-foreground transition-colors z-30">›</button>
@@ -199,7 +208,7 @@ export default function Studio() {
             {rightDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setRightDrawerOpen(false)} />
-                <div className="absolute right-0 top-0 bottom-0 w-[340px] z-50 border-l border-border overflow-hidden"><ShotsVersionsPanel shots={shots} /></div>
+                <div className="absolute right-0 top-0 bottom-0 w-[340px] z-50 border-l border-border overflow-hidden"><ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} /></div>
               </>
             )}
           </>
@@ -211,11 +220,7 @@ export default function Studio() {
             onCreateCharacter={(created) => setCharacters((prev) => [...prev, created])}
           />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-            <Film className="w-12 h-12" />
-            <div className="text-sm">Sequence workspace</div>
-            <div className="text-xs">Available in a later build phase.</div>
-          </div>
+          <Timeline shots={shots} onReorder={handleReorderShots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} />
         )}
       </div>
 

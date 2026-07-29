@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Film, Loader2, Check, AlertCircle } from 'lucide-react';
 import { compilePrompt } from '@/lib/compiler';
 import { parseIntent } from '@/lib/intentParser';
@@ -10,6 +10,8 @@ import MotionControls from './MotionControls';
 import ABCompare from './ABCompare';
 import PresetBar from './PresetBar';
 import ConsistencyInspector from './ConsistencyInspector';
+import TimingControls from './TimingControls';
+import OutputControls from './OutputControls';
 
 const TABS = ['INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
@@ -19,13 +21,18 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, presets, onSavePreset }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, presets, onSavePreset, selectedShot }) {
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
   const [intentText, setIntentText] = useState('');
   const [camera, setCamera] = useState({ shotType: 'Medium', cameraMove: 'Static', cameraSpeed: 50, cameraDistance: 50, cameraEasing: 'Linear', cameraStartDelay: 0, cameraPath: [] });
   const [motion, setMotion] = useState({ motionMode: 'simple', posture: 'Standing', energy: 50, weight: 50, tension: 50, bodyFacing: 'Front', handState: 'At sides', armPosition: 'At sides', headTiltPitch: 0, headTiltRoll: 0, gestureFrequency: 'Occasional', gestureStyle: 'Natural', propInteraction: 'None', gazeTarget: 'Camera', eyeContactDuration: 'Brief', blinkRate: 'Natural' });
   const [abCompare, setAbCompare] = useState(false);
+  const [timing, setTiming] = useState({ duration: 5, fps: 24, resolution: '1080p', continueFromPrevious: true, anchorStrength: 60 });
+
+  useEffect(() => {
+    if (selectedShot) setIntentText(selectedShot.intentText || '');
+  }, [selectedShot?.id]);
 
   const parsedIntent = useMemo(() => parseIntent(intentText), [intentText]);
 
@@ -139,9 +146,8 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
             </div>
           )}
           {activeTab === 'MOTION' && <MotionControls motion={motion} setMotion={setMotion} />}
-          {(activeTab === 'TIMING' || activeTab === 'OUTPUT') && (
-            <div className="text-xs text-muted-foreground">{activeTab} controls — available in a later phase.</div>
-          )}
+          {activeTab === 'TIMING' && <TimingControls timing={timing} setTiming={setTiming} />}
+          {activeTab === 'OUTPUT' && <OutputControls generation={generation} />}
         </div>
       </div>
 
