@@ -8,7 +8,7 @@ const WORKSPACES = [
   { id: 'sequence', label: 'SEQUENCE' },
 ];
 
-export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving, onOpenCredits, onExport, canExport, exporting, onOpenSettings }) {
+export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving, onOpenCredits, onExport, canExport, exporting, onOpenSettings, onOpenHelp }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(project?.name || '');
   const inputRef = useRef(null);
@@ -70,7 +70,7 @@ export default function TopBar({ project, onRename, activeWorkspace, onWorkspace
         <button onClick={onOpenSettings} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Project settings">
           <Settings className="w-4 h-4" />
         </button>
-        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={onOpenHelp} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Keyboard shortcuts">
           <HelpCircle className="w-4 h-4" />
         </button>
         <button onClick={onExport} disabled={!canExport || exporting} className="px-3 py-1.5 text-xs font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">

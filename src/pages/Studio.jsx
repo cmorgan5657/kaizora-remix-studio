@@ -12,6 +12,7 @@ import LockEditorDialog from '@/components/studio/LockEditorDialog';
 import Timeline from '@/components/studio/Timeline';
 import CreditDashboard from '@/components/studio/CreditDashboard';
 import ProjectSettings from '@/components/studio/ProjectSettings';
+import ShortcutsHelp from '@/components/studio/ShortcutsHelp';
 import { runPipeline } from '@/lib/pipeline';
 
 export default function Studio() {
@@ -35,6 +36,7 @@ export default function Studio() {
   const [creditDashboardOpen, setCreditDashboardOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [projectSettingsOpen, setProjectSettingsOpen] = useState(false);
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
   const [selectedShotId, setSelectedShotId] = useState(null);
   const [activeSequenceId, setActiveSequenceId] = useState(null);
   const [versions, setVersions] = useState([]);
@@ -77,6 +79,41 @@ export default function Studio() {
     if (!selectedShotId) { setVersions([]); return; }
     base44.entities.ShotVersion.filter({ shotId: selectedShotId }).then(setVersions).catch(() => {});
   }, [selectedShotId]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        handleExport();
+        return;
+      }
+
+      if (e.key === '?') {
+        setShortcutsHelpOpen(true);
+        return;
+      }
+
+      if (e.key === 'Escape' && shortcutsHelpOpen) {
+        setShortcutsHelpOpen(false);
+        return;
+      }
+
+      const sortedShots = [...shots].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+      const currentIndex = sortedShots.findIndex((s) => s.id === selectedShotId);
+
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        if (currentIndex > 0) setSelectedShotId(sortedShots[currentIndex - 1].id);
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        if (currentIndex >= 0 && currentIndex < sortedShots.length - 1) setSelectedShotId(sortedShots[currentIndex + 1].id);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [shots, selectedShotId, versions, shortcutsHelpOpen]);
 
   const updateProject = async (data) => {
     setSaving(true);
@@ -333,7 +370,7 @@ export default function Studio() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} onOpenSettings={() => setProjectSettingsOpen(true)} />
+      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} onOpenSettings={() => setProjectSettingsOpen(true)} onOpenHelp={() => setShortcutsHelpOpen(true)} />
 
       <div className="flex-1 flex overflow-hidden relative">
         {activeWorkspace === 'studio' ? (
@@ -397,6 +434,10 @@ export default function Studio() {
 
       {projectSettingsOpen && (
         <ProjectSettings project={project} onClose={() => setProjectSettingsOpen(false)} onUpdate={handleUpdateSettings} />
+      )}
+
+      {shortcutsHelpOpen && (
+        <ShortcutsHelp onClose={() => setShortcutsHelpOpen(false)} />
       )}
 
       {creditDashboardOpen && (
