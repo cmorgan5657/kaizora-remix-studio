@@ -1,0 +1,22 @@
+{
+  "name": "CameraPreset",
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "cameraParams": {
+      "type": "object"
+    },
+    "motionParams": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "projectId",
+    "name"
+  ]
+}

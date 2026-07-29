@@ -21,7 +21,8 @@ export default function Studio() {
   const [shots, setShots] = useState([]);
   const [sequences, setSequences] = useState([]);
   const [resolvedSeed, setResolvedSeed] = useState(null);
-  const [generation, setGeneration] = useState({ status: 'idle', stages: {}, job: null, version: null, error: null });
+  const [generation, setGeneration] = useState({ status: 'idle', stages: {}, job: null, version: null, previousVersion: null, error: null });
+  const [presets, setPresets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeWorkspace, setActiveWorkspace] = useState('studio');
   const [saving, setSaving] = useState(false);
@@ -32,7 +33,7 @@ export default function Studio() {
   const loadData = useCallback(async () => {
     if (!projectId) return;
     try {
-      const [proj, chars, styles, envs, lights, seqs, existingShots] = await Promise.all([
+      const [proj, chars, styles, envs, lights, seqs, existingShots, psts] = await Promise.all([
         base44.entities.Project.get(projectId),
         base44.entities.Character.filter({ projectId }),
         base44.entities.StyleLock.filter({ projectId }),
@@ -40,6 +41,7 @@ export default function Studio() {
         base44.entities.LightingLock.filter({ projectId }),
         base44.entities.Sequence.filter({ projectId }),
         base44.entities.Shot.filter({ projectId }),
+        base44.entities.CameraPreset.filter({ projectId }),
       ]);
       setProject(proj);
       setCharacters(chars);
@@ -48,6 +50,7 @@ export default function Studio() {
       setLightingLocks(lights);
       setSequences(seqs);
       setShots(existingShots);
+      setPresets(psts);
       setActiveWorkspace(proj.activeWorkspace || 'studio');
       if (proj.seedLocked) setResolvedSeed(proj.projectSeed);
       else setResolvedSeed(Math.floor(Math.random() * 1000000));
@@ -119,10 +122,15 @@ export default function Studio() {
       const result = await runPipeline({ projectId, shotId: shot.id, payload: finalPayload, qualityTier, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
       await base44.entities.Shot.update(shot.id, { status: 'complete', currentVersionId: result.version.id });
       setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
-      setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version }));
+      setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version, previousVersion: prev.version }));
     } catch (error) {
       setGeneration((prev) => ({ ...prev, status: 'failed', error: error.message }));
     }
+  };
+
+  const handleSavePreset = async (name, cameraParams, motionParams) => {
+    const preset = await base44.entities.CameraPreset.create({ projectId, name, cameraParams, motionParams });
+    setPresets((prev) => [...prev, preset]);
   };
 
   const panelProps = { characters, styleLocks, envLocks, lightingLocks, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock, onEditLock: handleEditLock, onToggleLockActive: handleToggleLockActive };
@@ -168,7 +176,7 @@ export default function Studio() {
                   <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                 ))}
               </div>
-              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} />
+              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} presets={presets} onSavePreset={handleSavePreset} />
             </main>
 
             <aside className="w-[340px] flex-shrink-0 border-l border-border max-[1399px]:hidden overflow-hidden">

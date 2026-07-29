@@ -5,6 +5,10 @@ import { parseIntent } from '@/lib/intentParser';
 import IntentChips from './IntentChips';
 import PromptInspector from './PromptInspector';
 import PipelineProgress from './PipelineProgress';
+import CameraControls from './CameraControls';
+import MotionControls from './MotionControls';
+import ABCompare from './ABCompare';
+import PresetBar from './PresetBar';
 
 const TABS = ['INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
@@ -14,10 +18,13 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, presets, onSavePreset }) {
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
   const [intentText, setIntentText] = useState('');
+  const [camera, setCamera] = useState({ shotType: 'Medium', cameraMove: 'Static', cameraSpeed: 50, cameraDistance: 50, cameraEasing: 'Linear', cameraStartDelay: 0, cameraPath: [] });
+  const [motion, setMotion] = useState({ motionMode: 'simple', posture: 'Standing', energy: 50, weight: 50, tension: 50, bodyFacing: 'Front', handState: 'At sides', armPosition: 'At sides', headTiltPitch: 0, headTiltRoll: 0, gestureFrequency: 'Occasional', gestureStyle: 'Natural', propInteraction: 'None', gazeTarget: 'Camera', eyeContactDuration: 'Brief', blinkRate: 'Natural' });
+  const [abCompare, setAbCompare] = useState(false);
 
   const parsedIntent = useMemo(() => parseIntent(intentText), [intentText]);
 
@@ -28,6 +35,9 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     const activeLight = lightingLocks?.find((l) => l.isActive);
     return compilePrompt({
       intent: intentText,
+      shotType: `${camera.shotType} shot, ${camera.cameraMove} move`,
+      cameraParams: camera,
+      motionParams: motion,
       character: activeCharacter ? { identityStatement: activeCharacter.identityStatement, negativePromptFragment: activeCharacter.negativePromptFragment, tier: activeCharacter.tier, triggerToken: activeCharacter.id ? `kzr_char_${activeCharacter.id.slice(-4)}` : null } : null,
       style: activeStyle ? { colorGrade: activeStyle.colorGrade, filmStock: activeStyle.filmStock, lens: activeStyle.lens } : null,
       environment: activeEnv ? { description: activeEnv.description, interiorExterior: activeEnv.interiorExterior, scale: activeEnv.scale } : null,
@@ -36,7 +46,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
       aspectRatio: project?.aspectRatio || '16:9',
       lockStrengths: { character: activeCharacter?.lockStrength, style: activeStyle?.lockStrength, environment: activeEnv?.lockStrength, lighting: activeLight?.lockStrength },
     });
-  }, [intentText, characters, styleLocks, envLocks, lightingLocks, project]);
+  }, [intentText, characters, styleLocks, envLocks, lightingLocks, project, camera, motion]);
 
   const removeChip = (index) => {
     const chip = parsedIntent.chips[index];
@@ -57,8 +67,15 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex items-center justify-center p-6 min-h-0">
-        <div className="w-full max-w-3xl aspect-video bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2 overflow-y-auto scrollbar-thin p-4">
-          {generation?.status === 'running' ? (
+        <div className="relative w-full max-w-3xl aspect-video bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2 overflow-y-auto scrollbar-thin p-4">
+          {generation?.version && generation?.previousVersion && (
+            <button onClick={() => setAbCompare(!abCompare)} className={`absolute top-2 right-2 z-10 px-2 py-1 text-xs rounded transition-colors ${abCompare ? 'bg-accent text-accent-foreground' : 'bg-card-raised border border-border text-muted-foreground hover:text-foreground'}`}>
+              A/B Compare
+            </button>
+          )}
+          {abCompare && generation?.version && generation?.previousVersion ? (
+            <ABCompare versionA={generation.previousVersion} versionB={generation.version} />
+          ) : generation?.status === 'running' ? (
             <PipelineProgress stages={generation.stages} />
           ) : generation?.status === 'complete' && generation.version ? (
             <>
@@ -113,7 +130,14 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
               <PromptInspector payload={compiledPayload} />
             </div>
           )}
-          {activeTab !== 'INTENT' && (
+          {activeTab === 'CAMERA' && (
+            <div className="space-y-4">
+              <CameraControls camera={camera} setCamera={setCamera} />
+              <PresetBar presets={presets} onSave={(name) => onSavePreset(name, camera, motion)} onApply={(preset) => { setCamera(preset.cameraParams); setMotion(preset.motionParams); }} />
+            </div>
+          )}
+          {activeTab === 'MOTION' && <MotionControls motion={motion} setMotion={setMotion} />}
+          {(activeTab === 'TIMING' || activeTab === 'OUTPUT') && (
             <div className="text-xs text-muted-foreground">{activeTab} controls — available in a later phase.</div>
           )}
         </div>
