@@ -408,7 +408,7 @@ export default function Studio() {
 
   const onboardingStep = shots.length === 0 ? (characters.length === 0 ? 'character_needed' : 'intent_needed') : null;
 
-  const panelProps = { characters, styleLocks, envLocks, lightingLocks, references, onReferencesChange: setReferences, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock, onEditLock: handleEditLock, onToggleLockActive: handleToggleLockActive };
+  const panelProps = { characters, styleLocks, envLocks, lightingLocks, references, onReferencesChange: setReferences, externalPrompt, onExternalPromptChange: setExternalPrompt, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock, onEditLock: handleEditLock, onToggleLockActive: handleToggleLockActive };
 
   if (loading) {
     return (

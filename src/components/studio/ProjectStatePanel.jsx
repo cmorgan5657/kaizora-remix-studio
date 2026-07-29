@@ -1,6 +1,6 @@
 import ReferencePanel from '@/components/studio/ReferencePanel';
 
-export default function ProjectStatePanel({ styleLocks, envLocks, lightingLocks, references, onReferencesChange }) {
+export default function ProjectStatePanel({ styleLocks, envLocks, lightingLocks, references, onReferencesChange, externalPrompt, onExternalPromptChange }) {
   const activeLocks = [styleLocks, envLocks, lightingLocks].filter((l) => l.some((i) => i.isActive)).length;
 
   return (
@@ -14,6 +14,18 @@ export default function ProjectStatePanel({ styleLocks, envLocks, lightingLocks,
         <span className="panel-title">Reference Assets</span>
         <div className="mt-2">
           <ReferencePanel references={references || []} onChange={onReferencesChange} />
+        </div>
+
+        <div className="mt-4">
+          <span className="panel-title">Prompt</span>
+          <div className="mt-2">
+            <textarea
+              value={externalPrompt || ''}
+              onChange={(e) => onExternalPromptChange?.(e.target.value)}
+              placeholder="Enter or paste your custom prompt here…"
+              className="w-full bg-card border border-border rounded-lg p-4 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring resize-none min-h-[220px]"
+            />
+          </div>
         </div>
       </div>
     </div>
