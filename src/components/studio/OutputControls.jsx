@@ -11,7 +11,7 @@ function Field({ label, children }) {
   );
 }
 
-export default function OutputControls({ generation }) {
+export default function OutputControls({ generation, onExport }) {
   const hasVersion = generation?.status === 'complete' && generation.version;
   return (
     <div className="space-y-4">
@@ -33,7 +33,7 @@ export default function OutputControls({ generation }) {
           </select>
         </Field>
       </div>
-      <button disabled={!hasVersion} className="px-4 py-2 text-sm text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+      <button onClick={onExport} disabled={!hasVersion} className="px-4 py-2 text-sm text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
         <Download className="w-4 h-4" /> Export current version
       </button>
       {!hasVersion && <p className="text-xs text-muted-foreground">Generate a shot first, then export the result.</p>}

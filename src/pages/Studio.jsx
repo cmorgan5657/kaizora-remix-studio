@@ -32,6 +32,7 @@ export default function Studio() {
   const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
   const [editingLock, setEditingLock] = useState(null);
   const [creditDashboardOpen, setCreditDashboardOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [selectedShotId, setSelectedShotId] = useState(null);
   const [versions, setVersions] = useState([]);
 
@@ -175,6 +176,22 @@ export default function Studio() {
     }
   };
 
+  const handleExport = () => {
+    const shot = shots.find((s) => s.id === selectedShotId);
+    if (!shot) return;
+    const shotVersions = versions.filter((v) => v.shotId === shot.id);
+    const version = shotVersions.find((v) => v.isAccepted) || shotVersions.find((v) => v.id === shot.currentVersionId) || shotVersions[shotVersions.length - 1];
+    if (!version || !version.videoUrl) return;
+    setExporting(true);
+    const a = document.createElement('a');
+    a.href = version.videoUrl;
+    a.download = `${(shot.name || 'shot').replace(/\s+/g, '_')}_v${version.versionNumber}.mp4`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => setExporting(false), 1500);
+  };
+
   const handleUpdateBudget = async (budget) => {
     await base44.entities.Project.update(projectId, { budgetCredits: budget });
     setProject((prev) => ({ ...prev, budgetCredits: budget }));
@@ -228,7 +245,7 @@ export default function Studio() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} />
+      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} />
 
       <div className="flex-1 flex overflow-hidden relative">
         {activeWorkspace === 'studio' ? (
@@ -253,7 +270,7 @@ export default function Studio() {
                   <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                 ))}
               </div>
-              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} />
+              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} />
             </main>
 
             <aside className="w-[340px] flex-shrink-0 border-l border-border max-[1399px]:hidden overflow-hidden">

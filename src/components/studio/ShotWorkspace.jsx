@@ -22,7 +22,7 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport }) {
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
   const [intentText, setIntentText] = useState('');
@@ -154,7 +154,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
           )}
           {activeTab === 'MOTION' && <MotionControls motion={motion} setMotion={setMotion} />}
           {activeTab === 'TIMING' && <TimingControls timing={timing} setTiming={setTiming} />}
-          {activeTab === 'OUTPUT' && <OutputControls generation={generation} />}
+          {activeTab === 'OUTPUT' && <OutputControls generation={generation} onExport={onExport} />}
         </div>
       </div>
 
