@@ -21,11 +21,11 @@ import ModelSelector from './ModelSelector';
 const TABS = ['REFERENCE', 'MODEL', 'INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
 const ASPECT_STYLE = {
-  '16:9': 'aspect-video max-w-3xl',
-  '9:16': 'aspect-[9/16] max-w-xs',
-  '2.39:1': 'aspect-[2.39/1] max-w-3xl',
-  '1:1': 'aspect-square max-w-md',
-  '4:5': 'aspect-[4/5] max-w-sm',
+  '16:9': 'aspect-video max-w-[614px]',
+  '9:16': 'aspect-[9/16] max-w-[256px]',
+  '2.39:1': 'aspect-[2.39/1] max-w-[614px]',
+  '1:1': 'aspect-square max-w-[358px]',
+  '4:5': 'aspect-[4/5] max-w-[307px]',
 };
 
 const QUALITY_MODES = [
