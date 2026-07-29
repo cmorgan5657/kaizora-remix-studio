@@ -34,6 +34,7 @@ export default function Studio() {
   const [creditDashboardOpen, setCreditDashboardOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [selectedShotId, setSelectedShotId] = useState(null);
+  const [activeSequenceId, setActiveSequenceId] = useState(null);
   const [versions, setVersions] = useState([]);
 
   const loadData = useCallback(async () => {
@@ -55,6 +56,7 @@ export default function Studio() {
       setEnvLocks(envs);
       setLightingLocks(lights);
       setSequences(seqs);
+      if (seqs.length > 0) setActiveSequenceId(seqs[0].id);
       setShots(existingShots);
       setPresets(psts);
       setActiveWorkspace(proj.activeWorkspace || 'studio');
@@ -123,10 +125,11 @@ export default function Studio() {
     const finalPayload = { ...payload, seed };
     setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
     try {
-      let seq = sequences[0];
+      let seq = sequences.find((s) => s.id === activeSequenceId) || sequences[0];
       if (!seq) {
         seq = await base44.entities.Sequence.create({ projectId, name: 'Main Sequence', orderIndex: 0 });
         setSequences([seq]);
+        setActiveSequenceId(seq.id);
       }
       const shot = await base44.entities.Shot.create({ sequenceId: seq.id, projectId, name: `Shot ${shots.length + 1}`, intentText: payload.positivePrompt, orderIndex: shots.length, status: 'generating', qualityTier, shotSeed: seed, seedLocked: project.seedLocked, ...camera, ...motion, ...timing });
       setShots((prev) => [...prev, shot]);
@@ -221,8 +224,33 @@ export default function Studio() {
     await base44.entities.ShotVersion.update(versionId, { isFavorite: !currentFavorite });
     setVersions((prev) => prev.map((v) => (v.id === versionId ? { ...v, isFavorite: !currentFavorite } : v)));
   };
+  const handleCreateSequence = async () => {
+    const seq = await base44.entities.Sequence.create({ projectId, name: `Sequence ${sequences.length + 1}`, orderIndex: sequences.length });
+    setSequences((prev) => [...prev, seq]);
+    setActiveSequenceId(seq.id);
+  };
+
+  const handleRenameSequence = async (seqId, name) => {
+    await base44.entities.Sequence.update(seqId, { name });
+    setSequences((prev) => prev.map((s) => (s.id === seqId ? { ...s, name } : s)));
+  };
+
+  const handleDeleteSequence = async (seqId) => {
+    const seqShots = shots.filter((s) => s.sequenceId === seqId);
+    if (seqShots.length > 0) return;
+    await base44.entities.Sequence.delete(seqId);
+    const remaining = sequences.filter((s) => s.id !== seqId);
+    setSequences(remaining);
+    if (activeSequenceId === seqId) setActiveSequenceId(remaining[0]?.id || null);
+  };
+
+  const handleSelectSequence = (seqId) => setActiveSequenceId(seqId);
+
   const handleReorderShots = async (reordered) => {
-    setShots(reordered);
+    setShots((prev) => prev.map((s) => {
+      const updated = reordered.find((r) => r.id === s.id);
+      return updated ? { ...s, orderIndex: updated.orderIndex } : s;
+    }));
     await Promise.all(reordered.map((s) => base44.entities.Shot.update(s.id, { orderIndex: s.orderIndex })));
   };
   const selectedShot = shots.find((s) => s.id === selectedShotId) || null;
@@ -301,7 +329,7 @@ export default function Studio() {
             onCreateCharacter={(created) => setCharacters((prev) => [...prev, created])}
           />
         ) : (
-          <Timeline shots={shots} onReorder={handleReorderShots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} />
+          <Timeline shots={shots} sequences={sequences} activeSequenceId={activeSequenceId} onSelectSequence={handleSelectSequence} onCreateSequence={handleCreateSequence} onRenameSequence={handleRenameSequence} onDeleteSequence={handleDeleteSequence} onReorder={handleReorderShots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} />
         )}
       </div>
 
