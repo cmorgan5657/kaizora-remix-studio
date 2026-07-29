@@ -65,7 +65,7 @@ export default function TopBar({ project, onRename, activeWorkspace, onWorkspace
         ))}
       </div>
 
-      <div className="flex items-center gap-3 flex-1 justify-end">
+      <div className="flex items-center gap-2 flex-1 justify-end">
         <button onClick={onToggleDirector} className={`p-1.5 transition-colors ${directorOpen ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`} title="AI Director">
           <Clapperboard className="w-4 h-4" />
         </button>

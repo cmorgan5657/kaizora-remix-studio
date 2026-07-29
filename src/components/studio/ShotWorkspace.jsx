@@ -133,7 +133,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 flex items-center justify-center p-6 min-h-0">
+      <div className="flex-1 flex items-center justify-center p-4 min-h-0">
         <div className={`relative w-full ${ASPECT_STYLE[project?.aspectRatio] || 'aspect-video max-w-3xl'} bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2 overflow-y-auto scrollbar-thin p-4`}>
           {generation?.version && generation?.previousVersion && (
             <button onClick={() => setAbCompare(!abCompare)} className={`absolute top-2 right-2 z-10 px-2 py-1 text-xs rounded transition-colors ${abCompare ? 'bg-accent text-accent-foreground' : 'bg-card-raised border border-border text-muted-foreground hover:text-foreground'}`}>
@@ -184,12 +184,12 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
       </div>
 
       <div className="border-t border-border bg-panel">
-        <div className="flex items-center px-4 border-b border-border">
+        <div className="flex items-center px-2 border-b border-border overflow-x-auto scrollbar-thin">
           {TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-2.5 text-xs font-medium transition-colors border-b-2 -mb-px ${
+              className={`px-2.5 py-2 text-[11px] font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
                 activeTab === tab ? 'text-foreground border-accent' : 'text-muted-foreground border-transparent hover:text-secondary-foreground'
               }`}
             >
@@ -197,7 +197,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
             </button>
           ))}
         </div>
-        <div className="p-4 min-h-[120px]">
+        <div className="p-4 min-h-[100px] max-h-[240px] overflow-y-auto scrollbar-thin">
           {activeTab === 'REFERENCE' && <ReferencePanel references={references} onChange={setReferences} />}
           {activeTab === 'MODEL' && <ModelSelector mode={generationMode} model={selectedModel} onModeChange={setGenerationMode} onModelChange={setSelectedModel} hasReferences={references.length > 0} />}
           {activeTab === 'INTENT' && (
@@ -233,13 +233,13 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
 
       <PreFlightValidation warnings={preFlightWarnings} blockingError={blockingError} />
 
-      <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-panel gap-4">
+      <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-panel gap-3 flex-wrap">
         <div className="flex items-center gap-0.5 bg-card rounded-md p-0.5 border border-border">
           {QUALITY_MODES.map((q) => (
             <button
               key={q.id}
               onClick={() => setQuality(q.id)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+              className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
                 quality === q.id ? 'bg-card-raised text-foreground' : 'text-muted-foreground hover:text-secondary-foreground'
               }`}
             >
@@ -247,27 +247,27 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
             </button>
           ))}
         </div>
-        <div className="text-xs text-muted-foreground flex items-center gap-2">
+        <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
           <span className="capitalize">{generationMode.replace('2', ' → ')}</span>
           <span className="text-border-active">·</span>
-          <span className="text-secondary-foreground">{selectedModel}</span>
+          <span className="text-secondary-foreground">{selectedModel.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</span>
           <span className="text-border-active">·</span>
           <span>Cost: <span className="text-secondary-foreground tabular-nums">{QUALITY_MODES.find((q) => q.id === quality)?.cost}</span></span>
         </div>
         <div className="flex items-center gap-2">
           {selectedShot && (
             <>
-              <button onClick={handleRegenerate} disabled={isGenerating} className="px-4 py-2 text-sm font-medium text-secondary-foreground bg-card-raised border border-border rounded-md hover:border-border-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" title="Same seed, refine settings">
+              <button onClick={handleRegenerate} disabled={isGenerating} className="px-3 py-1.5 text-sm font-medium text-secondary-foreground bg-card-raised border border-border rounded-md hover:border-border-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" title="Same seed, refine settings">
                 <RefreshCw className="w-4 h-4" /> Refine
               </button>
               {generation?.version?.resolvedPayload && (
-                <button onClick={() => onRegenerate?.({ ...generation.version.resolvedPayload, seed: generation.version.resolvedSeed, postProcessChain: postProcess }, quality, camera, motion, timing)} disabled={isGenerating} className="px-3 py-2 text-sm font-medium text-secondary-foreground bg-card-raised border border-border rounded-md hover:border-border-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" title="Reproduce from stored payload exactly">
+                <button onClick={() => onRegenerate?.({ ...generation.version.resolvedPayload, seed: generation.version.resolvedSeed, postProcessChain: postProcess }, quality, camera, motion, timing)} disabled={isGenerating} className="px-2.5 py-1.5 text-sm font-medium text-secondary-foreground bg-card-raised border border-border rounded-md hover:border-border-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" title="Reproduce from stored payload exactly">
                   <Copy className="w-4 h-4" /> Reproduce
                 </button>
               )}
             </>
           )}
-          <button onClick={handleGenerate} disabled={isGenerating || !!blockingError} data-onboarding="generate-btn" className="px-5 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          <button onClick={handleGenerate} disabled={isGenerating || !!blockingError} data-onboarding="generate-btn" className="px-4 py-1.5 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
             {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : 'Generate'}
           </button>
         </div>
