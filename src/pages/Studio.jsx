@@ -14,6 +14,7 @@ import CreditDashboard from '@/components/studio/CreditDashboard';
 import ProjectSettings from '@/components/studio/ProjectSettings';
 import ShortcutsHelp from '@/components/studio/ShortcutsHelp';
 import OnboardingHighlight from '@/components/studio/OnboardingHighlight';
+import DirectorPanel from '@/components/studio/DirectorPanel';
 import { runPipeline } from '@/lib/pipeline';
 
 export default function Studio() {
@@ -42,6 +43,7 @@ export default function Studio() {
   const [activeSequenceId, setActiveSequenceId] = useState(null);
   const [versions, setVersions] = useState([]);
   const [continuityFlags, setContinuityFlags] = useState([]);
+  const [directorOpen, setDirectorOpen] = useState(true);
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -357,6 +359,27 @@ export default function Studio() {
     }));
     await Promise.all(reordered.map((s) => base44.entities.Shot.update(s.id, { orderIndex: s.orderIndex })));
   };
+  const handleCreateShotsFromAI = async (shotSuggestions) => {
+    const seq = sequences.find((s) => s.id === activeSequenceId) || sequences[0];
+    if (!seq) return;
+    const startOrder = shots.length;
+    const newShots = await Promise.all(
+      shotSuggestions.map((s, i) => base44.entities.Shot.create({
+        sequenceId: seq.id, projectId, name: s.name, intentText: s.intentText,
+        shotType: s.shotType, cameraMove: s.cameraMove, duration: s.duration || 5,
+        orderIndex: startOrder + i, status: 'draft',
+      }))
+    );
+    setShots((prev) => [...prev, ...newShots]);
+    if (!selectedShotId && newShots.length > 0) setSelectedShotId(newShots[0].id);
+  };
+
+  const handleApplyIntent = async (intentText) => {
+    if (!selectedShotId) return;
+    await base44.entities.Shot.update(selectedShotId, { intentText });
+    setShots((prev) => prev.map((s) => (s.id === selectedShotId ? { ...s, intentText } : s)));
+  };
+
   const selectedShot = shots.find((s) => s.id === selectedShotId) || null;
 
   const STAGE_NAMES = { resolve: 'Resolving settings', precondition: 'Preparing conditioning', generate: 'Generating', postprocess: 'Restoring faces', measure: 'Measuring consistency', finalize: 'Finalizing' };
@@ -383,7 +406,7 @@ export default function Studio() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} onOpenSettings={() => setProjectSettingsOpen(true)} onOpenHelp={() => setShortcutsHelpOpen(true)} />
+      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} onOpenSettings={() => setProjectSettingsOpen(true)} onOpenHelp={() => setShortcutsHelpOpen(true)} directorOpen={directorOpen} onToggleDirector={() => setDirectorOpen(!directorOpen)} />
 
       <div className="flex-1 flex overflow-hidden relative">
         {activeWorkspace === 'studio' ? (
@@ -411,12 +434,16 @@ export default function Studio() {
               <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} />
             </main>
 
-            <aside className="w-[340px] flex-shrink-0 border-l border-border max-[1399px]:hidden overflow-hidden">
-              <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} />
+            <aside className={`flex-shrink-0 border-l border-border overflow-hidden ${directorOpen ? 'w-[360px]' : 'w-[340px] max-[1399px]:hidden'}`}>
+              {directorOpen ? (
+                <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onClose={() => setDirectorOpen(false)} />
+              ) : (
+                <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} />
+              )}
             </aside>
 
             <button onClick={() => setLeftDrawerOpen(true)} className="hidden max-[1099px]:flex absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 items-center justify-center bg-panel border border-border border-l-0 rounded-r-md text-muted-foreground hover:text-foreground transition-colors z-30">›</button>
-            <button onClick={() => setRightDrawerOpen(true)} className="hidden max-[1399px]:flex absolute right-0 top-1/2 -translate-y-1/2 w-6 h-12 items-center justify-center bg-panel border border-border border-r-0 rounded-l-md text-muted-foreground hover:text-foreground transition-colors z-30">‹</button>
+            {!directorOpen && <button onClick={() => setRightDrawerOpen(true)} className="hidden max-[1399px]:flex absolute right-0 top-1/2 -translate-y-1/2 w-6 h-12 items-center justify-center bg-panel border border-border border-r-0 rounded-l-md text-muted-foreground hover:text-foreground transition-colors z-30">‹</button>}
 
             {leftDrawerOpen && (
               <>
@@ -427,7 +454,7 @@ export default function Studio() {
             {rightDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setRightDrawerOpen(false)} />
-                <div className="absolute right-0 top-0 bottom-0 w-[340px] z-50 border-l border-border overflow-hidden"><ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} /></div>
+                <div className={`absolute right-0 top-0 bottom-0 z-50 border-l border-border overflow-hidden ${directorOpen ? 'w-[360px]' : 'w-[340px]'}`}>{directorOpen ? <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onClose={() => { setDirectorOpen(false); setRightDrawerOpen(false); }} /> : <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} />}</div>
               </>
             )}
           </>
