@@ -1,6 +1,6 @@
-import { Plus, Film, Clock, Star, GitBranch } from 'lucide-react';
+import { Plus, Film, Clock, Star, GitBranch, Trash2, Scissors } from 'lucide-react';
 
-export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId, versions, onToggleFavorite }) {
+export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId, versions, onToggleFavorite, onDeleteShot }) {
   return (
     <div className="h-full flex flex-col bg-panel">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -30,6 +30,9 @@ export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId
                       {shot.duration || 5}s · {shot.qualityTier || 'Draft'}
                     </div>
                   </div>
+                  <button onClick={(e) => { e.stopPropagation(); onDeleteShot?.(shot.id); }} className="p-1 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
               {selectedShotId === shot.id && versions && versions.length > 0 && (
@@ -41,7 +44,7 @@ export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId
                         <Film className="w-2.5 h-2.5 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs text-foreground">V{v.versionNumber}</div>
+                        <div className="text-xs text-foreground flex items-center gap-1">V{v.versionNumber}{v.isPartialRegeneration && <Scissors className="w-2 h-2 text-info" />}</div>
                         <div className="text-xs text-muted-foreground">{v.creditCost} cr · Seed {v.resolvedSeed}</div>
                       </div>
                       <button onClick={() => onToggleFavorite?.(v.id, v.isFavorite)} className={`p-0.5 transition-colors ${v.isFavorite ? 'text-warning' : 'text-muted-foreground hover:text-foreground'}`}>

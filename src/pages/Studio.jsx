@@ -148,7 +148,7 @@ export default function Studio() {
 
   const handleSelectShot = (shotId) => setSelectedShotId(shotId);
 
-  const handleRegenerate = async (payload, qualityTier, camera, motion, timing) => {
+  const handleRegenerate = async (payload, qualityTier, camera, motion, timing, surgical) => {
     if (!selectedShotId) return;
     const seed = payload.seed ?? resolvedSeed ?? Math.floor(Math.random() * 1000000);
     const finalPayload = { ...payload, seed };
@@ -162,12 +162,21 @@ export default function Studio() {
       const activeLight = lightingLocks.find((l) => l.isActive);
       const result = await runPipeline({ projectId, shotId: selectedShotId, payload: finalPayload, qualityTier, character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
       await base44.entities.Shot.update(selectedShotId, { status: 'complete', currentVersionId: result.version.id });
+      if (surgical) {
+        await base44.entities.ShotVersion.update(result.version.id, { isPartialRegeneration: true, regeneratedRegion: surgical.region, regeneratedTimeRange: surgical.timeRange });
+      }
       setShots((prev) => prev.map((s) => (s.id === selectedShotId ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
       base44.entities.ShotVersion.filter({ shotId: selectedShotId }).then(setVersions).catch(() => {});
       setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version, scores: result.scores, remedies: result.remedies, previousVersion: prev.version }));
     } catch (error) {
       setGeneration((prev) => ({ ...prev, status: 'failed', error: error.message }));
     }
+  };
+
+  const handleDeleteShot = async (shotId) => {
+    await base44.entities.Shot.delete(shotId);
+    setShots((prev) => prev.filter((s) => s.id !== shotId));
+    if (selectedShotId === shotId) setSelectedShotId(null);
   };
 
   const handleToggleFavorite = async (versionId, currentFavorite) => {
@@ -227,7 +236,7 @@ export default function Studio() {
             </main>
 
             <aside className="w-[340px] flex-shrink-0 border-l border-border max-[1399px]:hidden overflow-hidden">
-              <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} />
+              <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} />
             </aside>
 
             <button onClick={() => setLeftDrawerOpen(true)} className="hidden max-[1099px]:flex absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 items-center justify-center bg-panel border border-border border-l-0 rounded-r-md text-muted-foreground hover:text-foreground transition-colors z-30">›</button>
@@ -242,7 +251,7 @@ export default function Studio() {
             {rightDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setRightDrawerOpen(false)} />
-                <div className="absolute right-0 top-0 bottom-0 w-[340px] z-50 border-l border-border overflow-hidden"><ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} /></div>
+                <div className="absolute right-0 top-0 bottom-0 w-[340px] z-50 border-l border-border overflow-hidden"><ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} /></div>
               </>
             )}
           </>

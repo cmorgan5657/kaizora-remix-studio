@@ -12,6 +12,7 @@ import PresetBar from './PresetBar';
 import ConsistencyInspector from './ConsistencyInspector';
 import TimingControls from './TimingControls';
 import OutputControls from './OutputControls';
+import SurgicalRevisionBar from './SurgicalRevisionBar';
 
 const TABS = ['INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
@@ -75,6 +76,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
 
   const handleGenerate = () => onGenerate(compiledPayload, quality, camera, motion, timing);
   const handleRegenerate = () => onRegenerate?.(compiledPayload, quality, camera, motion, timing);
+  const handleSurgicalRegenerate = (region, timeRange) => onRegenerate?.(compiledPayload, quality, camera, motion, timing, { region, timeRange });
   const isGenerating = generation?.status === 'running';
 
   return (
@@ -155,6 +157,10 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
           {activeTab === 'OUTPUT' && <OutputControls generation={generation} />}
         </div>
       </div>
+
+      {selectedShot && generation?.status === 'complete' && (
+        <SurgicalRevisionBar onRegenerate={handleSurgicalRegenerate} disabled={isGenerating} />
+      )}
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-panel gap-4">
         <div className="flex items-center gap-0.5 bg-card rounded-md p-0.5 border border-border">
