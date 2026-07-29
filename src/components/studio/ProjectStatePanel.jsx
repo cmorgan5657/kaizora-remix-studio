@@ -1,21 +1,4 @@
-import { Plus, User, Palette, Mountain, Sun, MoreVertical } from 'lucide-react';
-
-function EntityCard({ name, icon: Icon, subtitle, thumbnail, onClick }) {
-  return (
-    <div onClick={onClick} className="flex items-center gap-2 p-2 rounded-md bg-card border border-border hover:border-border-active transition-colors group cursor-pointer">
-      {thumbnail ? (
-        <img src={thumbnail} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
-      ) : (
-        <div className="w-8 h-8 rounded bg-card-raised flex items-center justify-center flex-shrink-0"><Icon className="w-4 h-4 text-muted-foreground" /></div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="text-sm text-foreground truncate">{name}</div>
-        {subtitle && <div className="text-xs text-muted-foreground truncate">{subtitle}</div>}
-      </div>
-      {onClick && <button className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-foreground transition-all"><MoreVertical className="w-3.5 h-3.5" /></button>}
-    </div>
-  );
-}
+import { Plus, Palette, Mountain, Sun, MoreVertical } from 'lucide-react';
 
 function LockCard({ name, icon: Icon, subtitle, thumbnail, isActive, onToggleActive, onClick }) {
   return (
@@ -61,9 +44,7 @@ function Section({ title, onAdd, children }) {
   );
 }
 
-const TIER_LABELS = { described: 'Described — will drift', referenced: 'Referenced — mostly consistent', trained: 'Trained — holds across angles' };
-
-export default function ProjectStatePanel({ characters, styleLocks, envLocks, lightingLocks, onAddCharacter, onAddStyleLock, onAddEnvLock, onAddLightingLock, onEditLock, onToggleLockActive }) {
+export default function ProjectStatePanel({ styleLocks, envLocks, lightingLocks, onAddStyleLock, onAddEnvLock, onAddLightingLock, onEditLock, onToggleLockActive }) {
   const activeLocks = [styleLocks, envLocks, lightingLocks].filter((l) => l.some((i) => i.isActive)).length;
 
   return (
@@ -74,14 +55,6 @@ export default function ProjectStatePanel({ characters, styleLocks, envLocks, li
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-6">
-        <Section title="Characters" onAdd={onAddCharacter}>
-          {characters.length === 0 ? (
-            <EmptyCard icon={User} text="No characters yet. Define one once and it stays consistent across every shot." />
-          ) : characters.map((c) => (
-            <EntityCard key={c.id} name={c.name} icon={User} subtitle={`${TIER_LABELS[c.tier] || c.tier} · ${c.sheetStrength || 0}/100`} />
-          ))}
-        </Section>
-
         <Section title="Style Lock" onAdd={onAddStyleLock}>
           {styleLocks.length === 0 ? (
             <EmptyCard icon={Palette} text="No style lock. Keeps visuals consistent across shots." />
