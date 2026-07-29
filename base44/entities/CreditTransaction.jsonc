@@ -1,0 +1,32 @@
+{
+  "name": "CreditTransaction",
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "generation",
+        "regeneration",
+        "training",
+        "postprocess",
+        "refund"
+      ],
+      "default": "generation"
+    },
+    "amount": {
+      "type": "number",
+      "default": 0
+    },
+    "referenceId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "projectId",
+    "type",
+    "amount"
+  ]
+}

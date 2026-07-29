@@ -1,0 +1,80 @@
+{
+  "name": "StyleLock",
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "referenceImageUrl": {
+      "type": "string"
+    },
+    "colorGrade": {
+      "type": "string",
+      "enum": [
+        "Natural",
+        "Warm",
+        "Cool",
+        "Teal and Orange",
+        "Desaturated",
+        "High Contrast",
+        "Monochrome",
+        "Bleach Bypass",
+        "Custom"
+      ],
+      "default": "Natural"
+    },
+    "filmStock": {
+      "type": "string",
+      "enum": [
+        "Digital Clean",
+        "35mm",
+        "16mm",
+        "Super 8",
+        "VHS"
+      ],
+      "default": "Digital Clean"
+    },
+    "grain": {
+      "type": "number",
+      "default": 0
+    },
+    "halation": {
+      "type": "number",
+      "default": 0
+    },
+    "lens": {
+      "type": "string",
+      "enum": [
+        "Wide 24mm",
+        "Standard 35mm",
+        "Portrait 50mm",
+        "Telephoto 85mm",
+        "Anamorphic"
+      ],
+      "default": "Standard 35mm"
+    },
+    "depthOfField": {
+      "type": "number",
+      "default": 50
+    },
+    "aspectRatio": {
+      "type": "string",
+      "default": "16:9"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "lockStrength": {
+      "type": "number",
+      "default": 75
+    }
+  },
+  "required": [
+    "projectId",
+    "name"
+  ]
+}

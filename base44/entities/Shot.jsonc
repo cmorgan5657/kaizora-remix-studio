@@ -1,0 +1,169 @@
+{
+  "name": "Shot",
+  "type": "object",
+  "properties": {
+    "sequenceId": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "orderIndex": {
+      "type": "number",
+      "default": 0
+    },
+    "name": {
+      "type": "string"
+    },
+    "intentText": {
+      "type": "string"
+    },
+    "parsedIntent": {
+      "type": "object"
+    },
+    "shotType": {
+      "type": "string"
+    },
+    "cameraMove": {
+      "type": "string"
+    },
+    "cameraSpeed": {
+      "type": "number"
+    },
+    "cameraDistance": {
+      "type": "number"
+    },
+    "cameraEasing": {
+      "type": "string"
+    },
+    "cameraStartDelay": {
+      "type": "number"
+    },
+    "cameraPath": {
+      "type": "object"
+    },
+    "motionBlur": {
+      "type": "boolean",
+      "default": false
+    },
+    "cameraPresetName": {
+      "type": "string"
+    },
+    "posture": {
+      "type": "string"
+    },
+    "energy": {
+      "type": "number"
+    },
+    "weight": {
+      "type": "number"
+    },
+    "tension": {
+      "type": "number"
+    },
+    "bodyFacing": {
+      "type": "string"
+    },
+    "handState": {
+      "type": "string"
+    },
+    "armPosition": {
+      "type": "string"
+    },
+    "headTiltPitch": {
+      "type": "number"
+    },
+    "headTiltRoll": {
+      "type": "number"
+    },
+    "gestureFrequency": {
+      "type": "string"
+    },
+    "gestureStyle": {
+      "type": "string"
+    },
+    "propInteraction": {
+      "type": "string"
+    },
+    "gazeTarget": {
+      "type": "string"
+    },
+    "gazeTargetCharacterId": {
+      "type": "string"
+    },
+    "eyeContactDuration": {
+      "type": "string"
+    },
+    "blinkRate": {
+      "type": "string"
+    },
+    "motionMode": {
+      "type": "string",
+      "enum": [
+        "simple",
+        "advanced"
+      ],
+      "default": "simple"
+    },
+    "motionPresetName": {
+      "type": "string"
+    },
+    "duration": {
+      "type": "number",
+      "default": 5
+    },
+    "fps": {
+      "type": "number",
+      "default": 24
+    },
+    "resolution": {
+      "type": "string",
+      "default": "1080p"
+    },
+    "qualityTier": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Standard",
+        "Final"
+      ],
+      "default": "Draft"
+    },
+    "shotSeed": {
+      "type": "number"
+    },
+    "seedLocked": {
+      "type": "boolean",
+      "default": false
+    },
+    "continueFromPrevious": {
+      "type": "boolean",
+      "default": true
+    },
+    "anchorStrength": {
+      "type": "number",
+      "default": 60
+    },
+    "sameMomentAsShotId": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "generating",
+        "complete",
+        "failed"
+      ],
+      "default": "draft"
+    },
+    "currentVersionId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sequenceId",
+    "projectId"
+  ]
+}

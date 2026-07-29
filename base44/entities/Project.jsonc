@@ -1,0 +1,46 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "aspectRatio": {
+      "type": "string",
+      "enum": [
+        "16:9",
+        "9:16",
+        "2.39:1",
+        "1:1",
+        "4:5"
+      ],
+      "default": "16:9"
+    },
+    "projectSeed": {
+      "type": "number"
+    },
+    "seedLocked": {
+      "type": "boolean",
+      "default": false
+    },
+    "budgetCredits": {
+      "type": "number"
+    },
+    "creditBalance": {
+      "type": "number",
+      "default": 100
+    },
+    "activeWorkspace": {
+      "type": "string",
+      "enum": [
+        "studio",
+        "characters",
+        "sequence"
+      ],
+      "default": "studio"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

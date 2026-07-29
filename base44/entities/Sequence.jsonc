@@ -1,0 +1,27 @@
+{
+  "name": "Sequence",
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "sequenceSeed": {
+      "type": "number"
+    },
+    "seedLocked": {
+      "type": "boolean",
+      "default": false
+    },
+    "orderIndex": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "projectId",
+    "name"
+  ]
+}

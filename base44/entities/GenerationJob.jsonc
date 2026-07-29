@@ -1,0 +1,74 @@
+{
+  "name": "GenerationJob",
+  "type": "object",
+  "properties": {
+    "shotId": {
+      "type": "string"
+    },
+    "versionId": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "resolve",
+        "precondition",
+        "generate",
+        "postprocess",
+        "measure",
+        "finalize"
+      ],
+      "default": "resolve"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "processing",
+        "complete",
+        "failed",
+        "cancelled"
+      ],
+      "default": "queued"
+    },
+    "progress": {
+      "type": "number",
+      "default": 0
+    },
+    "queuePosition": {
+      "type": "number"
+    },
+    "errorStage": {
+      "type": "string"
+    },
+    "errorMessage": {
+      "type": "string"
+    },
+    "creditsCharged": {
+      "type": "number",
+      "default": 0
+    },
+    "creditsRefunded": {
+      "type": "number",
+      "default": 0
+    },
+    "stageCache": {
+      "type": "object"
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "shotId",
+    "projectId"
+  ]
+}

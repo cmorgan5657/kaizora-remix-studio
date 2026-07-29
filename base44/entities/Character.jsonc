@@ -1,0 +1,94 @@
+{
+  "name": "Character",
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "described",
+        "referenced",
+        "trained"
+      ],
+      "default": "described"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "Lead",
+        "Supporting",
+        "Background",
+        "Narrator"
+      ]
+    },
+    "identityStatement": {
+      "type": "string"
+    },
+    "negativePromptFragment": {
+      "type": "string"
+    },
+    "ageRange": {
+      "type": "number"
+    },
+    "genderPresentation": {
+      "type": "string"
+    },
+    "height": {
+      "type": "string"
+    },
+    "build": {
+      "type": "string"
+    },
+    "skinTone": {
+      "type": "string"
+    },
+    "skinToneDescription": {
+      "type": "string"
+    },
+    "hairColor": {
+      "type": "string"
+    },
+    "hairLength": {
+      "type": "string"
+    },
+    "hairTexture": {
+      "type": "string"
+    },
+    "hairStyle": {
+      "type": "string"
+    },
+    "eyeColor": {
+      "type": "string"
+    },
+    "eyeShape": {
+      "type": "string"
+    },
+    "facialStructure": {
+      "type": "string"
+    },
+    "sheetStrength": {
+      "type": "number",
+      "default": 0
+    },
+    "activeAdapterId": {
+      "type": "string"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "lockStrength": {
+      "type": "number",
+      "default": 75
+    }
+  },
+  "required": [
+    "projectId",
+    "name"
+  ]
+}

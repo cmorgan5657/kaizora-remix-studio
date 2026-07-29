@@ -1,0 +1,73 @@
+{
+  "name": "LightingLock",
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "keyDirection": {
+      "type": "string",
+      "enum": [
+        "N",
+        "NE",
+        "E",
+        "SE",
+        "S",
+        "SW",
+        "W",
+        "NW",
+        "Top",
+        "Bottom"
+      ],
+      "default": "N"
+    },
+    "keyIntensity": {
+      "type": "number",
+      "default": 75
+    },
+    "fillRatio": {
+      "type": "number",
+      "default": 40
+    },
+    "colorTemperature": {
+      "type": "number",
+      "default": 5600
+    },
+    "practicalSources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "timeOfDay": {
+      "type": "string",
+      "default": "Day"
+    },
+    "mood": {
+      "type": "string",
+      "enum": [
+        "Natural",
+        "Dramatic",
+        "Soft",
+        "Harsh",
+        "Moody"
+      ],
+      "default": "Natural"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "lockStrength": {
+      "type": "number",
+      "default": 75
+    }
+  },
+  "required": [
+    "projectId",
+    "name"
+  ]
+}

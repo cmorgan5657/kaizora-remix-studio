@@ -1,0 +1,65 @@
+{
+  "name": "ShotVersion",
+  "type": "object",
+  "properties": {
+    "shotId": {
+      "type": "string"
+    },
+    "versionNumber": {
+      "type": "number",
+      "default": 1
+    },
+    "parentVersionId": {
+      "type": "string"
+    },
+    "videoUrl": {
+      "type": "string"
+    },
+    "thumbnailUrl": {
+      "type": "string"
+    },
+    "resolvedPayload": {
+      "type": "object"
+    },
+    "resolvedSeed": {
+      "type": "number"
+    },
+    "creditCost": {
+      "type": "number",
+      "default": 0
+    },
+    "qualityTier": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Standard",
+        "Final"
+      ],
+      "default": "Draft"
+    },
+    "isPartialRegeneration": {
+      "type": "boolean",
+      "default": false
+    },
+    "regeneratedRegion": {
+      "type": "string"
+    },
+    "regeneratedTimeRange": {
+      "type": "string"
+    },
+    "changeSummary": {
+      "type": "string"
+    },
+    "isFavorite": {
+      "type": "boolean",
+      "default": false
+    },
+    "isAccepted": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "shotId"
+  ]
+}

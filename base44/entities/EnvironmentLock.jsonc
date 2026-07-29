@@ -1,0 +1,54 @@
+{
+  "name": "EnvironmentLock",
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "referenceImages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "depthMapUrl": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "interiorExterior": {
+      "type": "string",
+      "enum": [
+        "interior",
+        "exterior"
+      ],
+      "default": "interior"
+    },
+    "scale": {
+      "type": "string",
+      "enum": [
+        "Intimate",
+        "Room",
+        "Building",
+        "Landscape"
+      ],
+      "default": "Room"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "lockStrength": {
+      "type": "number",
+      "default": 75
+    }
+  },
+  "required": [
+    "projectId",
+    "name"
+  ]
+}

@@ -41,6 +41,18 @@ module.exports = {
   				foreground: 'hsl(var(--destructive-foreground))'
   			},
   			border: 'hsl(var(--border))',
+  			'border-active': 'hsl(var(--border-active))',
+  			panel: 'hsl(var(--panel))',
+  			'card-raised': 'hsl(var(--card-raised))',
+  			accent: {
+  				DEFAULT: 'hsl(var(--accent))',
+  				hover: 'hsl(var(--accent-hover))',
+  				muted: 'hsl(var(--accent-muted))',
+  				foreground: 'hsl(var(--accent-foreground))'
+  			},
+  			success: 'hsl(var(--success))',
+  			warning: 'hsl(var(--warning))',
+  			info: 'hsl(var(--info))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
   			chart: {
