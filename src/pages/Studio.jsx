@@ -411,7 +411,7 @@ export default function Studio() {
       <div className="flex-1 flex overflow-hidden relative">
         {activeWorkspace === 'studio' ? (
           <>
-            <aside className="w-[300px] flex-shrink-0 border-r border-border max-[1099px]:hidden overflow-hidden">
+            <aside className="w-[240px] flex-shrink-0 border-r border-border max-[1099px]:hidden overflow-hidden">
               <ProjectStatePanel {...panelProps} />
             </aside>
 
@@ -448,7 +448,7 @@ export default function Studio() {
             {leftDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setLeftDrawerOpen(false)} />
-                <div className="absolute left-0 top-0 bottom-0 w-[300px] z-50 border-r border-border overflow-hidden"><ProjectStatePanel {...panelProps} /></div>
+                <div className="absolute left-0 top-0 bottom-0 w-[240px] z-50 border-r border-border overflow-hidden"><ProjectStatePanel {...panelProps} /></div>
               </>
             )}
             {rightDrawerOpen && (
