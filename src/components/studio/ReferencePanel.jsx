@@ -40,8 +40,6 @@ export default function ReferencePanel({ references, onChange }) {
 
   return (
     <div className="space-y-3">
-      <div className="text-xs text-muted-foreground">Upload reference assets to build from — images, video, or audio. These are passed as conditioning to the generation model.</div>
-
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
