@@ -44,6 +44,7 @@ export default function Studio() {
   const [versions, setVersions] = useState([]);
   const [continuityFlags, setContinuityFlags] = useState([]);
   const [directorOpen, setDirectorOpen] = useState(true);
+  const [references, setReferences] = useState([]);
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -382,13 +383,18 @@ export default function Studio() {
 
   const selectedShot = shots.find((s) => s.id === selectedShotId) || null;
 
+  useEffect(() => {
+    if (!selectedShot) { setReferences([]); return; }
+    setReferences(selectedShot.referenceAssets || []);
+  }, [selectedShot?.id]);
+
   const STAGE_NAMES = { resolve: 'Resolving settings', precondition: 'Preparing conditioning', generate: 'Generating', postprocess: 'Restoring faces', measure: 'Measuring consistency', finalize: 'Finalizing' };
   const activeStageId = generation.status === 'running' ? Object.entries(generation.stages).find(([, s]) => s === 'processing')?.[0] : null;
   const generatingStage = activeStageId ? STAGE_NAMES[activeStageId] : null;
 
   const onboardingStep = shots.length === 0 ? (characters.length === 0 ? 'character_needed' : 'intent_needed') : null;
 
-  const panelProps = { characters, styleLocks, envLocks, lightingLocks, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock, onEditLock: handleEditLock, onToggleLockActive: handleToggleLockActive };
+  const panelProps = { characters, styleLocks, envLocks, lightingLocks, references, onReferencesChange: setReferences, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock, onEditLock: handleEditLock, onToggleLockActive: handleToggleLockActive };
 
   if (loading) {
     return (
@@ -431,7 +437,7 @@ export default function Studio() {
                   <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                 ))}
               </div>
-              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} />
+              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} references={references} />
             </main>
 
             <aside className={`flex-shrink-0 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px] max-[1399px]:hidden'}`}>

@@ -1,4 +1,5 @@
 import { Plus, Palette, Mountain, Sun, MoreVertical } from 'lucide-react';
+import ReferencePanel from '@/components/studio/ReferencePanel';
 
 function LockCard({ name, icon: Icon, subtitle, thumbnail, isActive, onToggleActive, onClick }) {
   return (
@@ -44,7 +45,7 @@ function Section({ title, onAdd, children }) {
   );
 }
 
-export default function ProjectStatePanel({ styleLocks, envLocks, lightingLocks, onAddStyleLock, onAddEnvLock, onAddLightingLock, onEditLock, onToggleLockActive }) {
+export default function ProjectStatePanel({ styleLocks, envLocks, lightingLocks, references, onReferencesChange, onAddStyleLock, onAddEnvLock, onAddLightingLock, onEditLock, onToggleLockActive }) {
   const activeLocks = [styleLocks, envLocks, lightingLocks].filter((l) => l.some((i) => i.isActive)).length;
 
   return (
@@ -78,6 +79,13 @@ export default function ProjectStatePanel({ styleLocks, envLocks, lightingLocks,
             <LockCard key={l.id} name={l.name} icon={Sun} subtitle={l.mood} isActive={l.isActive} onToggleActive={() => onToggleLockActive('LightingLock', l.id, l.isActive)} onClick={() => onEditLock('LightingLock', l.id)} />
           ))}
         </Section>
+
+        <div className="pt-4 mt-2 border-t border-border">
+          <span className="panel-title">Reference Assets</span>
+          <div className="mt-2">
+            <ReferencePanel references={references || []} onChange={onReferencesChange} />
+          </div>
+        </div>
       </div>
     </div>
   );

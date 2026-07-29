@@ -15,10 +15,9 @@ import OutputControls from './OutputControls';
 import SurgicalRevisionBar from './SurgicalRevisionBar';
 import VideoPlayer from './VideoPlayer';
 import PreFlightValidation from './PreFlightValidation';
-import ReferencePanel from './ReferencePanel';
 import ModelSelector from './ModelSelector';
 
-const TABS = ['REFERENCE', 'MODEL', 'INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
+const TABS = ['MODEL', 'INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
 const ASPECT_STYLE = {
   '16:9': 'aspect-video max-w-[614px]',
@@ -34,7 +33,7 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references }) {
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
   const [intentText, setIntentText] = useState('');
@@ -49,7 +48,6 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     frameInterpolation: { enabled: false, targetFps: 60 },
     artifactDetection: { enabled: true },
   });
-  const [references, setReferences] = useState([]);
   const [generationMode, setGenerationMode] = useState('text2video');
   const [selectedModel, setSelectedModel] = useState('veo3');
   const [timing, setTiming] = useState({ duration: 5, fps: 24, resolution: '1080p', continueFromPrevious: true, anchorStrength: 60, shotSeed: null, seedLocked: false, sameMomentAsShotId: null });
@@ -60,7 +58,6 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     setCamera({ shotType: selectedShot.shotType || 'Medium', cameraMove: selectedShot.cameraMove || 'Static', cameraSpeed: selectedShot.cameraSpeed ?? 50, cameraDistance: selectedShot.cameraDistance ?? 50, cameraEasing: selectedShot.cameraEasing || 'Linear', cameraStartDelay: selectedShot.cameraStartDelay ?? 0, cameraPath: selectedShot.cameraPath || [] });
     setMotion({ motionMode: selectedShot.motionMode || 'simple', posture: selectedShot.posture || 'Standing', energy: selectedShot.energy ?? 50, weight: selectedShot.weight ?? 50, tension: selectedShot.tension ?? 50, bodyFacing: selectedShot.bodyFacing || 'Front', handState: selectedShot.handState || 'At sides', armPosition: selectedShot.armPosition || 'At sides', headTiltPitch: selectedShot.headTiltPitch ?? 0, headTiltRoll: selectedShot.headTiltRoll ?? 0, gestureFrequency: selectedShot.gestureFrequency || 'Occasional', gestureStyle: selectedShot.gestureStyle || 'Natural', propInteraction: selectedShot.propInteraction || 'None', gazeTarget: selectedShot.gazeTarget || 'Camera', eyeContactDuration: selectedShot.eyeContactDuration || 'Brief', blinkRate: selectedShot.blinkRate || 'Natural' });
     setTiming({ duration: selectedShot.duration ?? 5, fps: selectedShot.fps ?? 24, resolution: selectedShot.resolution || '1080p', continueFromPrevious: selectedShot.continueFromPrevious ?? true, anchorStrength: selectedShot.anchorStrength ?? 60, shotSeed: selectedShot.shotSeed ?? null, seedLocked: selectedShot.seedLocked ?? false, sameMomentAsShotId: selectedShot.sameMomentAsShotId ?? null });
-    setReferences(selectedShot.referenceAssets || []);
     setGenerationMode(selectedShot.generationMode || 'text2video');
     setSelectedModel(selectedShot.selectedModel || 'veo3');
   }, [selectedShot?.id, selectedShot?.intentText]);
@@ -198,7 +195,6 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
           ))}
         </div>
         <div className="p-4 min-h-[100px] max-h-[240px] overflow-y-auto scrollbar-thin">
-          {activeTab === 'REFERENCE' && <ReferencePanel references={references} onChange={setReferences} />}
           {activeTab === 'MODEL' && <ModelSelector mode={generationMode} model={selectedModel} onModeChange={setGenerationMode} onModelChange={setSelectedModel} hasReferences={references.length > 0} />}
           {activeTab === 'INTENT' && (
             <div className="space-y-3">
