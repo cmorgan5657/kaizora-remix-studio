@@ -8,7 +8,7 @@ const WORKSPACES = [
   { id: 'sequence', label: 'SEQUENCE' },
 ];
 
-export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving }) {
+export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving, onOpenCredits }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(project?.name || '');
   const inputRef = useRef(null);
@@ -66,7 +66,7 @@ export default function TopBar({ project, onRename, activeWorkspace, onWorkspace
       </div>
 
       <div className="flex items-center gap-3 flex-1 justify-end">
-        <span className="text-xs text-secondary-foreground tabular-nums">{project?.creditBalance ?? 0} credits</span>
+        <button onClick={onOpenCredits} className="text-xs text-secondary-foreground hover:text-accent transition-colors tabular-nums">{project?.creditBalance ?? 0} credits</button>
         <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
           <HelpCircle className="w-4 h-4" />
         </button>

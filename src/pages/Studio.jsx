@@ -10,6 +10,7 @@ import ShotWorkspace from '@/components/studio/ShotWorkspace';
 import ShotsVersionsPanel from '@/components/studio/ShotsVersionsPanel';
 import LockEditorDialog from '@/components/studio/LockEditorDialog';
 import Timeline from '@/components/studio/Timeline';
+import CreditDashboard from '@/components/studio/CreditDashboard';
 import { runPipeline } from '@/lib/pipeline';
 
 export default function Studio() {
@@ -30,6 +31,7 @@ export default function Studio() {
   const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
   const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
   const [editingLock, setEditingLock] = useState(null);
+  const [creditDashboardOpen, setCreditDashboardOpen] = useState(false);
   const [selectedShotId, setSelectedShotId] = useState(null);
   const [versions, setVersions] = useState([]);
 
@@ -173,6 +175,11 @@ export default function Studio() {
     }
   };
 
+  const handleUpdateBudget = async (budget) => {
+    await base44.entities.Project.update(projectId, { budgetCredits: budget });
+    setProject((prev) => ({ ...prev, budgetCredits: budget }));
+  };
+
   const handleDeleteShot = async (shotId) => {
     await base44.entities.Shot.delete(shotId);
     setShots((prev) => prev.filter((s) => s.id !== shotId));
@@ -207,7 +214,7 @@ export default function Studio() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} />
+      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} />
 
       <div className="flex-1 flex overflow-hidden relative">
         {activeWorkspace === 'studio' ? (
@@ -268,6 +275,10 @@ export default function Studio() {
       </div>
 
       <BottomBar seed={resolvedSeed} seedLocked={project.seedLocked} seedScope={seedScope} onToggleSeedLock={handleToggleSeedLock} onRandomizeSeed={handleRandomizeSeed} cost="1 credit" />
+
+      {creditDashboardOpen && (
+        <CreditDashboard projectId={projectId} project={project} onClose={() => setCreditDashboardOpen(false)} onUpdateBudget={handleUpdateBudget} />
+      )}
 
       {editingLock && (
         <LockEditorDialog
