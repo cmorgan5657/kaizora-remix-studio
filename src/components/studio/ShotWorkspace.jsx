@@ -238,7 +238,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
 
       <PreFlightValidation warnings={preFlightWarnings} blockingError={blockingError} />
 
-      <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-panel gap-3 flex-wrap">
+      <div className="flex items-center justify-center px-4 py-2.5 border-t border-border bg-panel gap-3 flex-wrap">
         <div className="flex items-center gap-0.5 bg-card rounded-md p-0.5 border border-border">
           {QUALITY_MODES.map((q) => (
             <button
