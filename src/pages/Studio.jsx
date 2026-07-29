@@ -9,6 +9,7 @@ import ProjectStatePanel from '@/components/studio/ProjectStatePanel';
 import ShotWorkspace from '@/components/studio/ShotWorkspace';
 import ShotsVersionsPanel from '@/components/studio/ShotsVersionsPanel';
 import LockEditorDialog from '@/components/studio/LockEditorDialog';
+import { runPipeline } from '@/lib/pipeline';
 
 export default function Studio() {
   const { projectId } = useParams();
@@ -18,6 +19,9 @@ export default function Studio() {
   const [envLocks, setEnvLocks] = useState([]);
   const [lightingLocks, setLightingLocks] = useState([]);
   const [shots, setShots] = useState([]);
+  const [sequences, setSequences] = useState([]);
+  const [resolvedSeed, setResolvedSeed] = useState(null);
+  const [generation, setGeneration] = useState({ status: 'idle', stages: {}, job: null, version: null, error: null });
   const [loading, setLoading] = useState(true);
   const [activeWorkspace, setActiveWorkspace] = useState('studio');
   const [saving, setSaving] = useState(false);
@@ -28,19 +32,25 @@ export default function Studio() {
   const loadData = useCallback(async () => {
     if (!projectId) return;
     try {
-      const [proj, chars, styles, envs, lights] = await Promise.all([
+      const [proj, chars, styles, envs, lights, seqs, existingShots] = await Promise.all([
         base44.entities.Project.get(projectId),
         base44.entities.Character.filter({ projectId }),
         base44.entities.StyleLock.filter({ projectId }),
         base44.entities.EnvironmentLock.filter({ projectId }),
         base44.entities.LightingLock.filter({ projectId }),
+        base44.entities.Sequence.filter({ projectId }),
+        base44.entities.Shot.filter({ projectId }),
       ]);
       setProject(proj);
       setCharacters(chars);
       setStyleLocks(styles);
       setEnvLocks(envs);
       setLightingLocks(lights);
+      setSequences(seqs);
+      setShots(existingShots);
       setActiveWorkspace(proj.activeWorkspace || 'studio');
+      if (proj.seedLocked) setResolvedSeed(proj.projectSeed);
+      else setResolvedSeed(Math.floor(Math.random() * 1000000));
     } catch (e) {
       console.error(e);
     } finally {
@@ -59,8 +69,14 @@ export default function Studio() {
 
   const handleRename = (name) => updateProject({ name });
   const handleWorkspaceChange = (ws) => { setActiveWorkspace(ws); updateProject({ activeWorkspace: ws }); };
-  const handleToggleSeedLock = () => updateProject({ seedLocked: !project.seedLocked });
-  const handleRandomizeSeed = () => { if (!project.seedLocked) updateProject({ projectSeed: Math.floor(Math.random() * 1000000) }); };
+  const handleToggleSeedLock = () => {
+    if (project.seedLocked) {
+      updateProject({ seedLocked: false });
+    } else {
+      updateProject({ seedLocked: true, projectSeed: resolvedSeed });
+    }
+  };
+  const handleRandomizeSeed = () => { if (!project.seedLocked) setResolvedSeed(Math.floor(Math.random() * 1000000)); };
 
   const handleAddCharacter = async () => {
     const char = await base44.entities.Character.create({ projectId, name: 'New Character', tier: 'described', sheetStrength: 7, isActive: true, lockStrength: 75 });
@@ -86,6 +102,27 @@ export default function Studio() {
     const lists = { StyleLock: styleLocks, EnvironmentLock: envLocks, LightingLock: lightingLocks };
     const lock = lists[type].find((l) => l.id === id);
     if (lock) setEditingLock({ type, lock });
+  };
+
+  const handleGenerate = async (payload, qualityTier) => {
+    const seed = payload.seed ?? resolvedSeed ?? Math.floor(Math.random() * 1000000);
+    const finalPayload = { ...payload, seed };
+    setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, error: null });
+    try {
+      let seq = sequences[0];
+      if (!seq) {
+        seq = await base44.entities.Sequence.create({ projectId, name: 'Main Sequence', orderIndex: 0 });
+        setSequences([seq]);
+      }
+      const shot = await base44.entities.Shot.create({ sequenceId: seq.id, projectId, name: `Shot ${shots.length + 1}`, intentText: payload.positivePrompt, orderIndex: shots.length, status: 'generating', qualityTier, shotSeed: seed, seedLocked: project.seedLocked });
+      setShots((prev) => [...prev, shot]);
+      const result = await runPipeline({ projectId, shotId: shot.id, payload: finalPayload, qualityTier, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
+      await base44.entities.Shot.update(shot.id, { status: 'complete', currentVersionId: result.version.id });
+      setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
+      setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version }));
+    } catch (error) {
+      setGeneration((prev) => ({ ...prev, status: 'failed', error: error.message }));
+    }
   };
 
   const panelProps = { characters, styleLocks, envLocks, lightingLocks, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock, onEditLock: handleEditLock, onToggleLockActive: handleToggleLockActive };
@@ -131,7 +168,7 @@ export default function Studio() {
                   <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                 ))}
               </div>
-              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} />
+              <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} />
             </main>
 
             <aside className="w-[340px] flex-shrink-0 border-l border-border max-[1399px]:hidden overflow-hidden">
@@ -170,7 +207,7 @@ export default function Studio() {
         )}
       </div>
 
-      <BottomBar seed={project.projectSeed} seedLocked={project.seedLocked} seedScope={seedScope} onToggleSeedLock={handleToggleSeedLock} onRandomizeSeed={handleRandomizeSeed} cost="1 credit" />
+      <BottomBar seed={resolvedSeed} seedLocked={project.seedLocked} seedScope={seedScope} onToggleSeedLock={handleToggleSeedLock} onRandomizeSeed={handleRandomizeSeed} cost="1 credit" />
 
       {editingLock && (
         <LockEditorDialog

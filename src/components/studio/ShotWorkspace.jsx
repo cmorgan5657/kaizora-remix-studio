@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Film } from 'lucide-react';
+import { Film, Loader2, Check, AlertCircle } from 'lucide-react';
 import { compilePrompt } from '@/lib/compiler';
 import { parseIntent } from '@/lib/intentParser';
 import IntentChips from './IntentChips';
 import PromptInspector from './PromptInspector';
+import PipelineProgress from './PipelineProgress';
 
 const TABS = ['INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
@@ -13,7 +14,7 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate }) {
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
   const [intentText, setIntentText] = useState('');
@@ -31,7 +32,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
       style: activeStyle ? { colorGrade: activeStyle.colorGrade, filmStock: activeStyle.filmStock, lens: activeStyle.lens } : null,
       environment: activeEnv ? { description: activeEnv.description, interiorExterior: activeEnv.interiorExterior, scale: activeEnv.scale } : null,
       lighting: activeLight ? { mood: activeLight.mood, timeOfDay: activeLight.timeOfDay, keyDirection: activeLight.keyDirection } : null,
-      seed: project?.seedLocked ? project.projectSeed : null,
+      seed: resolvedSeed,
       aspectRatio: project?.aspectRatio || '16:9',
       lockStrengths: { character: activeCharacter?.lockStrength, style: activeStyle?.lockStrength, environment: activeEnv?.lockStrength, lighting: activeLight?.lockStrength },
     });
@@ -50,13 +51,36 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     setIntentText(sentences.filter((s) => !s.toLowerCase().includes(word)).join(' '));
   };
 
+  const handleGenerate = () => onGenerate(compiledPayload, quality);
+  const isGenerating = generation?.status === 'running';
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 flex items-center justify-center p-6 min-h-0">
-        <div className="w-full max-w-3xl aspect-video bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2">
-          <Film className="w-12 h-12 text-muted-foreground" />
-          <div className="text-sm text-secondary-foreground">No shot generated</div>
-          <div className="text-xs text-muted-foreground">Set your controls and generate.</div>
+        <div className="w-full max-w-3xl aspect-video bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2 overflow-y-auto scrollbar-thin p-4">
+          {generation?.status === 'running' ? (
+            <PipelineProgress stages={generation.stages} />
+          ) : generation?.status === 'complete' && generation.version ? (
+            <>
+              <Check className="w-10 h-10 text-success" />
+              <div className="text-sm text-foreground">Shot generated</div>
+              <div className="text-xs text-muted-foreground">Version {generation.version.versionNumber} · {generation.version.creditCost} credits · Seed {generation.version.resolvedSeed}</div>
+              <div className="text-xs text-muted-foreground mt-1">Quality: {generation.version.qualityTier}</div>
+            </>
+          ) : generation?.status === 'failed' ? (
+            <>
+              <AlertCircle className="w-10 h-10 text-destructive" />
+              <div className="text-sm text-destructive">Generation failed</div>
+              <div className="text-xs text-muted-foreground text-center max-w-sm">{generation.error || 'Unknown error'}</div>
+              <div className="text-xs text-success mt-1">Credits refunded automatically</div>
+            </>
+          ) : (
+            <>
+              <Film className="w-12 h-12 text-muted-foreground" />
+              <div className="text-sm text-secondary-foreground">No shot generated</div>
+              <div className="text-xs text-muted-foreground">Set your controls and generate.</div>
+            </>
+          )}
         </div>
       </div>
 
@@ -112,8 +136,8 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
         <div className="text-xs text-muted-foreground">
           Cost: <span className="text-secondary-foreground tabular-nums">{QUALITY_MODES.find((q) => q.id === quality)?.cost}</span>
         </div>
-        <button className="px-5 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors">
-          Generate
+        <button onClick={handleGenerate} disabled={isGenerating} className="px-5 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : 'Generate'}
         </button>
       </div>
     </div>
