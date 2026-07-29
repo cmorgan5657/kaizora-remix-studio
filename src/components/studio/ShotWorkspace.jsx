@@ -15,8 +15,10 @@ import OutputControls from './OutputControls';
 import SurgicalRevisionBar from './SurgicalRevisionBar';
 import VideoPlayer from './VideoPlayer';
 import PreFlightValidation from './PreFlightValidation';
+import ReferencePanel from './ReferencePanel';
+import ModelSelector from './ModelSelector';
 
-const TABS = ['INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
+const TABS = ['REFERENCE', 'MODEL', 'INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
 const ASPECT_STYLE = {
   '16:9': 'aspect-video max-w-3xl',
@@ -47,6 +49,9 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     frameInterpolation: { enabled: false, targetFps: 60 },
     artifactDetection: { enabled: true },
   });
+  const [references, setReferences] = useState([]);
+  const [generationMode, setGenerationMode] = useState('text2video');
+  const [selectedModel, setSelectedModel] = useState('veo3');
   const [timing, setTiming] = useState({ duration: 5, fps: 24, resolution: '1080p', continueFromPrevious: true, anchorStrength: 60, shotSeed: null, seedLocked: false, sameMomentAsShotId: null });
 
   useEffect(() => {
@@ -55,6 +60,9 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     setCamera({ shotType: selectedShot.shotType || 'Medium', cameraMove: selectedShot.cameraMove || 'Static', cameraSpeed: selectedShot.cameraSpeed ?? 50, cameraDistance: selectedShot.cameraDistance ?? 50, cameraEasing: selectedShot.cameraEasing || 'Linear', cameraStartDelay: selectedShot.cameraStartDelay ?? 0, cameraPath: selectedShot.cameraPath || [] });
     setMotion({ motionMode: selectedShot.motionMode || 'simple', posture: selectedShot.posture || 'Standing', energy: selectedShot.energy ?? 50, weight: selectedShot.weight ?? 50, tension: selectedShot.tension ?? 50, bodyFacing: selectedShot.bodyFacing || 'Front', handState: selectedShot.handState || 'At sides', armPosition: selectedShot.armPosition || 'At sides', headTiltPitch: selectedShot.headTiltPitch ?? 0, headTiltRoll: selectedShot.headTiltRoll ?? 0, gestureFrequency: selectedShot.gestureFrequency || 'Occasional', gestureStyle: selectedShot.gestureStyle || 'Natural', propInteraction: selectedShot.propInteraction || 'None', gazeTarget: selectedShot.gazeTarget || 'Camera', eyeContactDuration: selectedShot.eyeContactDuration || 'Brief', blinkRate: selectedShot.blinkRate || 'Natural' });
     setTiming({ duration: selectedShot.duration ?? 5, fps: selectedShot.fps ?? 24, resolution: selectedShot.resolution || '1080p', continueFromPrevious: selectedShot.continueFromPrevious ?? true, anchorStrength: selectedShot.anchorStrength ?? 60, shotSeed: selectedShot.shotSeed ?? null, seedLocked: selectedShot.seedLocked ?? false, sameMomentAsShotId: selectedShot.sameMomentAsShotId ?? null });
+    setReferences(selectedShot.referenceAssets || []);
+    setGenerationMode(selectedShot.generationMode || 'text2video');
+    setSelectedModel(selectedShot.selectedModel || 'veo3');
   }, [selectedShot?.id, selectedShot?.intentText]);
 
   const parsedIntent = useMemo(() => parseIntent(intentText), [intentText]);
@@ -93,8 +101,8 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   };
 
   const getSeed = () => timing.seedLocked && timing.shotSeed != null ? timing.shotSeed : resolvedSeed;
-  const handleGenerate = () => onGenerate({ ...compiledPayload, seed: getSeed(), postProcessChain: postProcess }, quality, camera, motion, timing);
-  const handleRegenerate = () => onRegenerate?.({ ...compiledPayload, seed: getSeed(), postProcessChain: postProcess }, quality, camera, motion, timing);
+  const handleGenerate = () => onGenerate({ ...compiledPayload, seed: getSeed(), postProcessChain: postProcess, references, generationMode, selectedModel }, quality, camera, motion, timing);
+  const handleRegenerate = () => onRegenerate?.({ ...compiledPayload, seed: getSeed(), postProcessChain: postProcess, references, generationMode, selectedModel }, quality, camera, motion, timing);
   const handleSurgicalRegenerate = (region, timeRange) => onRegenerate?.({ ...compiledPayload, seed: getSeed(), postProcessChain: postProcess }, quality, camera, motion, timing, { region, timeRange });
   const isGenerating = generation?.status === 'running';
 
@@ -112,11 +120,15 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     if (compiledPayload.tokenCount > compiledPayload.tokenBudget) {
       warnings.push({ message: `Compiled prompt is ${compiledPayload.tokenCount} tokens (budget: ${compiledPayload.tokenBudget}). Lowest-priority segments will be dropped.` });
     }
+    const needsRef = ['image2image', 'image2video', 'video2video', 'audio2audio'].includes(generationMode);
+    if (needsRef && references.length === 0) {
+      warnings.push({ message: `${generationMode.replace('2', ' → ')} mode requires at least one reference asset. Upload one in the REFERENCE tab.` });
+    }
     if (parsedIntent.conflict) {
       warnings.push({ message: parsedIntent.conflict.message });
     }
     return warnings;
-  }, [characters, envLocks, camera.cameraMove, compiledPayload.tokenCount, compiledPayload.tokenBudget, parsedIntent.conflict]);
+  }, [characters, envLocks, camera.cameraMove, compiledPayload.tokenCount, compiledPayload.tokenBudget, parsedIntent.conflict, generationMode, references]);
   const blockingError = (project?.creditBalance ?? 0) < (QUALITY_CREDITS[quality] || 1) ? `Insufficient credits. Need ${QUALITY_CREDITS[quality] || 1}, have ${project?.creditBalance ?? 0}.` : null;
 
   return (
@@ -186,6 +198,8 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
           ))}
         </div>
         <div className="p-4 min-h-[120px]">
+          {activeTab === 'REFERENCE' && <ReferencePanel references={references} onChange={setReferences} />}
+          {activeTab === 'MODEL' && <ModelSelector mode={generationMode} model={selectedModel} onModeChange={setGenerationMode} onModelChange={setSelectedModel} hasReferences={references.length > 0} />}
           {activeTab === 'INTENT' && (
             <div className="space-y-3">
               <div className="text-xs text-muted-foreground">Describe what happens in this shot. Your character and locks are applied automatically.</div>
@@ -233,8 +247,12 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
             </button>
           ))}
         </div>
-        <div className="text-xs text-muted-foreground">
-          Cost: <span className="text-secondary-foreground tabular-nums">{QUALITY_MODES.find((q) => q.id === quality)?.cost}</span>
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <span className="capitalize">{generationMode.replace('2', ' → ')}</span>
+          <span className="text-border-active">·</span>
+          <span className="text-secondary-foreground">{selectedModel}</span>
+          <span className="text-border-active">·</span>
+          <span>Cost: <span className="text-secondary-foreground tabular-nums">{QUALITY_MODES.find((q) => q.id === quality)?.cost}</span></span>
         </div>
         <div className="flex items-center gap-2">
           {selectedShot && (

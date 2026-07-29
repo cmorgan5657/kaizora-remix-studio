@@ -160,6 +160,46 @@
     },
     "currentVersionId": {
       "type": "string"
+    },
+    "referenceAssets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "audio"
+            ]
+          },
+          "url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "generationMode": {
+      "type": "string",
+      "enum": [
+        "text2video",
+        "image2video",
+        "video2video",
+        "text2image",
+        "image2image",
+        "text2audio",
+        "audio2audio",
+        "text2music"
+      ],
+      "default": "text2video"
+    },
+    "selectedModel": {
+      "type": "string"
     }
   },
   "required": [

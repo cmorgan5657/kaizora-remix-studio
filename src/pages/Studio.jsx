@@ -179,7 +179,7 @@ export default function Studio() {
         setSequences([seq]);
         setActiveSequenceId(seq.id);
       }
-      const shot = await base44.entities.Shot.create({ sequenceId: seq.id, projectId, name: `Shot ${shots.length + 1}`, intentText: payload.positivePrompt, orderIndex: shots.length, status: 'generating', qualityTier, shotSeed: seed, seedLocked: project.seedLocked, ...camera, ...motion, ...timing });
+      const shot = await base44.entities.Shot.create({ sequenceId: seq.id, projectId, name: `Shot ${shots.length + 1}`, intentText: payload.positivePrompt, orderIndex: shots.length, status: 'generating', qualityTier, shotSeed: seed, seedLocked: project.seedLocked, referenceAssets: payload.references || [], generationMode: payload.generationMode, selectedModel: payload.selectedModel, ...camera, ...motion, ...timing });
       setShots((prev) => [...prev, shot]);
       setSelectedShotId(shot.id);
       const activeCharacter = characters.find((c) => c.isActive);
@@ -208,8 +208,8 @@ export default function Studio() {
     const finalPayload = { ...payload, seed };
     setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
     try {
-      await base44.entities.Shot.update(selectedShotId, { ...camera, ...motion, ...timing, status: 'generating', qualityTier, shotSeed: seed });
-      setShots((prev) => prev.map((s) => (s.id === selectedShotId ? { ...s, ...camera, ...motion, ...timing, status: 'generating', qualityTier, shotSeed: seed } : s)));
+      await base44.entities.Shot.update(selectedShotId, { ...camera, ...motion, ...timing, status: 'generating', qualityTier, shotSeed: seed, referenceAssets: payload.references || [], generationMode: payload.generationMode, selectedModel: payload.selectedModel });
+      setShots((prev) => prev.map((s) => (s.id === selectedShotId ? { ...s, ...camera, ...motion, ...timing, status: 'generating', qualityTier, shotSeed: seed, referenceAssets: payload.references || [], generationMode: payload.generationMode, selectedModel: payload.selectedModel } : s)));
       const activeCharacter = characters.find((c) => c.isActive);
       const activeStyle = styleLocks.find((l) => l.isActive);
       const activeEnv = envLocks.find((l) => l.isActive);
