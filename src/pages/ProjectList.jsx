@@ -1,18 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Plus, Film } from 'lucide-react';
+import { Plus, Film, Trash2 } from 'lucide-react';
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
 
 export default function ProjectList() {
   const [projects, setProjects] = useState([]);
+  const [shotCounts, setShotCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    base44.entities.Project.list('-created_date', 50)
-      .then(setProjects)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      base44.entities.Project.list('-created_date', 50),
+      base44.entities.Shot.list('-created_date', 200),
+    ]).then(([projs, shots]) => {
+      setProjects(projs);
+      const counts = {};
+      shots.forEach((s) => {
+        counts[s.projectId] = (counts[s.projectId] || 0) + 1;
+      });
+      setShotCounts(counts);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const createProject = async () => {
@@ -26,6 +45,12 @@ export default function ProjectList() {
       budgetCredits: 0,
     });
     navigate(`/studio/${project.id}`);
+  };
+
+  const deleteProject = async (projectId, e) => {
+    e.stopPropagation();
+    await base44.entities.Project.delete(projectId);
+    setProjects((prev) => prev.filter((p) => p.id !== projectId));
   };
 
   return (
@@ -54,15 +79,26 @@ export default function ProjectList() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((p) => (
-              <button key={p.id} onClick={() => navigate(`/studio/${p.id}`)} className="p-4 rounded-lg bg-card border border-border hover:border-border-active transition-colors text-left group">
-                <div className="aspect-video bg-card-raised rounded-md flex items-center justify-center mb-3">
-                  <Film className="w-8 h-8 text-muted-foreground" />
+            {projects.map((p) => {
+              const shotCount = shotCounts[p.id] || 0;
+              return (
+                <div key={p.id} onClick={() => navigate(`/studio/${p.id}`)} className="p-4 rounded-lg bg-card border border-border hover:border-border-active transition-colors text-left group cursor-pointer">
+                  <div className="aspect-video bg-card-raised rounded-md flex items-center justify-center mb-3 relative overflow-hidden">
+                    <Film className="w-8 h-8 text-muted-foreground" />
+                    <span className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded bg-background/80 text-secondary-foreground">{p.aspectRatio || '16:9'}</span>
+                    {shotCount > 0 && <span className="absolute bottom-2 left-2 px-1.5 py-0.5 text-[10px] rounded bg-background/80 text-secondary-foreground">{shotCount} shot{shotCount !== 1 ? 's' : ''}</span>}
+                    <button onClick={(e) => deleteProject(p.id, e)} className="absolute top-2 left-2 p-1 rounded bg-background/80 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="text-sm font-medium text-foreground truncate">{p.name}</div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-muted-foreground">{p.creditBalance ?? 0} credits</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(p.updated_date)}</span>
+                  </div>
                 </div>
-                <div className="text-sm font-medium text-foreground">{p.name}</div>
-                <div className="text-xs text-muted-foreground mt-1">{p.creditBalance ?? 0} credits · {p.aspectRatio || '16:9'}</div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
