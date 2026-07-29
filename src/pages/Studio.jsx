@@ -285,6 +285,27 @@ export default function Studio() {
 
   const handleSelectSequence = (seqId) => setActiveSequenceId(seqId);
 
+  const handleToggleSeqSeedLock = async (seqId) => {
+    const seq = sequences.find((s) => s.id === seqId);
+    if (!seq) return;
+    if (seq.seedLocked) {
+      await base44.entities.Sequence.update(seqId, { seedLocked: false });
+      setSequences((prev) => prev.map((s) => (s.id === seqId ? { ...s, seedLocked: false } : s)));
+    } else {
+      const seed = seq.sequenceSeed ?? Math.floor(Math.random() * 1000000);
+      await base44.entities.Sequence.update(seqId, { seedLocked: true, sequenceSeed: seed });
+      setSequences((prev) => prev.map((s) => (s.id === seqId ? { ...s, seedLocked: true, sequenceSeed: seed } : s)));
+    }
+  };
+
+  const handleRandomizeSeqSeed = async (seqId) => {
+    const seq = sequences.find((s) => s.id === seqId);
+    if (!seq || seq.seedLocked) return;
+    const seed = Math.floor(Math.random() * 1000000);
+    await base44.entities.Sequence.update(seqId, { sequenceSeed: seed });
+    setSequences((prev) => prev.map((s) => (s.id === seqId ? { ...s, sequenceSeed: seed } : s)));
+  };
+
   const handleReorderShots = async (reordered) => {
     setShots((prev) => prev.map((s) => {
       const updated = reordered.find((r) => r.id === s.id);
@@ -368,7 +389,7 @@ export default function Studio() {
             onCreateCharacter={(created) => setCharacters((prev) => [...prev, created])}
           />
         ) : (
-          <Timeline shots={shots} sequences={sequences} activeSequenceId={activeSequenceId} onSelectSequence={handleSelectSequence} onCreateSequence={handleCreateSequence} onRenameSequence={handleRenameSequence} onDeleteSequence={handleDeleteSequence} onReorder={handleReorderShots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} />
+          <Timeline shots={shots} sequences={sequences} activeSequenceId={activeSequenceId} onSelectSequence={handleSelectSequence} onCreateSequence={handleCreateSequence} onRenameSequence={handleRenameSequence} onDeleteSequence={handleDeleteSequence} onReorder={handleReorderShots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} onToggleSeqSeedLock={handleToggleSeqSeedLock} onRandomizeSeqSeed={handleRandomizeSeqSeed} />
         )}
       </div>
 

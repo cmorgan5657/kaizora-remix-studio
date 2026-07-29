@@ -1,13 +1,23 @@
 import { useState } from 'react';
-import { Film, Clock, Plus, Layers, Trash2, Hash, Lock, Pencil } from 'lucide-react';
+import { Film, Clock, Plus, Layers, Trash2, Hash, Lock, Pencil, Shuffle } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
-export default function Timeline({ shots, sequences, activeSequenceId, onSelectSequence, onCreateSequence, onRenameSequence, onDeleteSequence, onReorder, onSelectShot, selectedShotId }) {
+const STATUS_LABELS = { draft: 'Draft', ready: 'Ready', generating: 'Generating', complete: 'Complete', failed: 'Failed' };
+const STATUS_BADGE = {
+  draft: 'bg-card-raised text-muted-foreground',
+  ready: 'bg-info/10 text-info',
+  generating: 'bg-warning/10 text-warning',
+  complete: 'bg-success/10 text-success',
+  failed: 'bg-destructive/10 text-destructive',
+};
+
+export default function Timeline({ shots, sequences, activeSequenceId, onSelectSequence, onCreateSequence, onRenameSequence, onDeleteSequence, onReorder, onSelectShot, selectedShotId, onToggleSeqSeedLock, onRandomizeSeqSeed }) {
   const [editingSeqId, setEditingSeqId] = useState(null);
   const [editName, setEditName] = useState('');
 
   const activeSequence = sequences?.find((s) => s.id === activeSequenceId);
   const sequenceShots = shots.filter((s) => s.sequenceId === activeSequenceId);
+  const totalDuration = sequenceShots.reduce((sum, s) => sum + (s.duration || 5), 0);
 
   const handleDragEnd = (result) => {
     if (!result.destination || result.destination.index === result.source.index) return;
@@ -63,11 +73,18 @@ export default function Timeline({ shots, sequences, activeSequenceId, onSelectS
             </button>
           </>
         )}
-        {activeSequence?.sequenceSeed != null && (
+        {activeSequence && (
           <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
             <Hash className="w-3 h-3" />
-            {activeSequence.sequenceSeed}
-            {activeSequence.seedLocked && <Lock className="w-2.5 h-2.5" />}
+            {activeSequence.sequenceSeed ?? '—'}
+            <button onClick={() => onToggleSeqSeedLock?.(activeSequence.id)} className={`p-0.5 rounded transition-colors ${activeSequence.seedLocked ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`} title={activeSequence.seedLocked ? 'Unlock seed' : 'Lock seed'}>
+              <Lock className="w-2.5 h-2.5" />
+            </button>
+            {!activeSequence.seedLocked && (
+              <button onClick={() => onRandomizeSeqSeed?.(activeSequence.id)} className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors" title="Randomize seed">
+                <Shuffle className="w-2.5 h-2.5" />
+              </button>
+            )}
           </span>
         )}
         <div className="flex-1" />
@@ -81,8 +98,14 @@ export default function Timeline({ shots, sequences, activeSequenceId, onSelectS
         </button>
       </div>
 
-      <div className="px-6 py-2 border-b border-border">
+      <div className="px-6 py-2 border-b border-border flex items-center justify-between">
         <span className="panel-title">{sequenceShots.length} shot{sequenceShots.length !== 1 ? 's' : ''} · drag to reorder</span>
+        {sequenceShots.length > 0 && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+            <Clock className="w-3 h-3" />
+            {totalDuration}s total
+          </span>
+        )}
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -108,9 +131,7 @@ export default function Timeline({ shots, sequences, activeSequenceId, onSelectS
                       >
                         <div className="flex items-center gap-1.5 mb-2">
                           <span className="text-xs font-medium text-muted-foreground tabular-nums">{String(index + 1).padStart(2, '0')}</span>
-                          {shot.status === 'complete' && <span className="w-1.5 h-1.5 rounded-full bg-success" />}
-                          {shot.status === 'generating' && <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />}
-                          {shot.status === 'failed' && <span className="w-1.5 h-1.5 rounded-full bg-destructive" />}
+                          <span className={`px-1 py-0.5 text-[9px] rounded ${STATUS_BADGE[shot.status] || STATUS_BADGE.draft}`}>{STATUS_LABELS[shot.status] || 'Draft'}</span>
                         </div>
                         <div className="w-full h-12 rounded bg-card-raised flex items-center justify-center mb-2">
                           <Film className="w-4 h-4 text-muted-foreground" />
