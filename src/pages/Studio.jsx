@@ -444,8 +444,8 @@ export default function Studio() {
               {directorOpen ? (
                 <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onClose={() => setDirectorOpen(false)} />
               ) : (
-                <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} />
-              )}
+                <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />
+                            )}
             </aside>
 
             <button onClick={() => setLeftDrawerOpen(true)} className="hidden max-[1099px]:flex absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 items-center justify-center bg-panel border border-border border-l-0 rounded-r-md text-muted-foreground hover:text-foreground transition-colors z-30">›</button>
@@ -460,7 +460,7 @@ export default function Studio() {
             {rightDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setRightDrawerOpen(false)} />
-                <div className={`absolute right-0 top-0 bottom-0 z-50 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px]'}`}>{directorOpen ? <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onClose={() => { setDirectorOpen(false); setRightDrawerOpen(false); }} /> : <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} />}</div>
+                <div className={`absolute right-0 top-0 bottom-0 z-50 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px]'}`}>{directorOpen ? <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onClose={() => { setDirectorOpen(false); setRightDrawerOpen(false); }} /> : <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />}</div>
               </>
             )}
           </>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plus, Film, Clock, Star, GitBranch, Trash2, Scissors, Check, Copy } from 'lucide-react';
+import { Plus, Film, Clock, Star, GitBranch, Trash2, Scissors, Check, Copy, Clapperboard } from 'lucide-react';
 
-export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId, versions, onToggleFavorite, onDeleteShot, onAcceptVersion, onRenameShot, onDeleteVersion, onAddShot, onDuplicateShot }) {
+export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId, versions, onToggleFavorite, onDeleteShot, onAcceptVersion, onRenameShot, onDeleteVersion, onAddShot, onDuplicateShot, onOpenDirector }) {
   const [editingShotId, setEditingShotId] = useState(null);
   const [editName, setEditName] = useState('');
 
@@ -20,10 +20,17 @@ export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId
   return (
     <div className="h-full flex flex-col bg-panel">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <span className="panel-title">Shots & Versions</span>
-        <button onClick={onAddShot} className="text-xs text-muted-foreground hover:text-accent transition-colors flex items-center gap-1">
-          <Plus className="w-3 h-3" /> Add
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="panel-title">Shots & Versions</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={onOpenDirector} className="p-1 text-muted-foreground hover:text-accent transition-colors" title="Open AI Director">
+            <Clapperboard className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={onAddShot} className="text-xs text-muted-foreground hover:text-accent transition-colors flex items-center gap-1">
+            <Plus className="w-3 h-3" /> Add
+          </button>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
         {shots.length === 0 ? (
