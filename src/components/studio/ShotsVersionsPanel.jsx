@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Plus, Film, Clock, Star, GitBranch, Trash2, Scissors, Check, Copy, Clapperboard } from 'lucide-react';
+import ConsistencyDriftIndicator from './ConsistencyDriftIndicator';
 
-export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId, versions, onToggleFavorite, onDeleteShot, onAcceptVersion, onRenameShot, onDeleteVersion, onAddShot, onDuplicateShot, onOpenDirector }) {
+export default function ShotsVersionsPanel({ shots, references, onSelectShot, selectedShotId, versions, onToggleFavorite, onDeleteShot, onAcceptVersion, onRenameShot, onDeleteVersion, onAddShot, onDuplicateShot, onOpenDirector }) {
   const [editingShotId, setEditingShotId] = useState(null);
   const [editName, setEditName] = useState('');
 
@@ -80,7 +81,8 @@ export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId
                 <div className="mt-1.5 ml-2 pl-2 border-l border-border space-y-1">
                   <div className="text-xs text-muted-foreground px-1 py-0.5 flex items-center gap-1"><GitBranch className="w-2.5 h-2.5" /> {versions.length} version{versions.length !== 1 ? 's' : ''}</div>
                   {versions.map((v) => (
-                    <div key={v.id} className={`flex items-center gap-2 p-1.5 rounded ${v.isAccepted ? 'bg-success/10 border border-success/30' : 'bg-card-raised'}`}>
+                    <div key={v.id}>
+                    <div className={`flex items-center gap-2 p-1.5 rounded ${v.isAccepted ? 'bg-success/10 border border-success/30' : 'bg-card-raised'}`}>
                       <div className="w-6 h-6 rounded bg-card flex items-center justify-center flex-shrink-0">
                         <Film className="w-2.5 h-2.5 text-muted-foreground" />
                       </div>
@@ -101,6 +103,8 @@ export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId
                       <button onClick={() => onDeleteVersion?.(v.id)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors" title="Delete version">
                         <Trash2 className="w-3 h-3" />
                       </button>
+                    </div>
+                    <ConsistencyDriftIndicator versionId={v.id} hasReferences={(references || []).length > 0} />
                     </div>
                   ))}
                 </div>
