@@ -79,12 +79,12 @@ export default function ProjectStatePanel({ styleLocks, envLocks, lightingLocks,
             <LockCard key={l.id} name={l.name} icon={Sun} subtitle={l.mood} isActive={l.isActive} onToggleActive={() => onToggleLockActive('LightingLock', l.id, l.isActive)} onClick={() => onEditLock('LightingLock', l.id)} />
           ))}
         </Section>
+      </div>
 
-        <div className="pt-4 mt-2 border-t border-border">
-          <span className="panel-title">Reference Assets</span>
-          <div className="mt-2">
-            <ReferencePanel references={references || []} onChange={onReferencesChange} />
-          </div>
+      <div className="border-t border-border p-4">
+        <span className="panel-title">Reference Assets</span>
+        <div className="mt-2">
+          <ReferencePanel references={references || []} onChange={onReferencesChange} />
         </div>
       </div>
     </div>
