@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plus, Film, Clock, Star, GitBranch, Trash2, Scissors, Check } from 'lucide-react';
+import { Plus, Film, Clock, Star, GitBranch, Trash2, Scissors, Check, Copy } from 'lucide-react';
 
-export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId, versions, onToggleFavorite, onDeleteShot, onAcceptVersion, onRenameShot }) {
+export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId, versions, onToggleFavorite, onDeleteShot, onAcceptVersion, onRenameShot, onDeleteVersion, onAddShot, onDuplicateShot }) {
   const [editingShotId, setEditingShotId] = useState(null);
   const [editName, setEditName] = useState('');
 
@@ -21,7 +21,7 @@ export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId
     <div className="h-full flex flex-col bg-panel">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <span className="panel-title">Shots & Versions</span>
-        <button className="text-xs text-muted-foreground hover:text-accent transition-colors flex items-center gap-1">
+        <button onClick={onAddShot} className="text-xs text-muted-foreground hover:text-accent transition-colors flex items-center gap-1">
           <Plus className="w-3 h-3" /> Add
         </button>
       </div>
@@ -61,6 +61,9 @@ export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId
                       {shot.duration || 5}s · {shot.qualityTier || 'Draft'}
                     </div>
                   </div>
+                  <button onClick={(e) => { e.stopPropagation(); onDuplicateShot?.(shot.id); }} className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0" title="Duplicate shot">
+                    <Copy className="w-3 h-3" />
+                  </button>
                   <button onClick={(e) => { e.stopPropagation(); onDeleteShot?.(shot.id); }} className="p-1 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -87,6 +90,9 @@ export default function ShotsVersionsPanel({ shots, onSelectShot, selectedShotId
                       </button>
                       <button onClick={() => onToggleFavorite?.(v.id, v.isFavorite)} className={`p-0.5 transition-colors ${v.isFavorite ? 'text-warning' : 'text-muted-foreground hover:text-foreground'}`}>
                         <Star className={`w-3 h-3 ${v.isFavorite ? 'fill-current' : ''}`} />
+                      </button>
+                      <button onClick={() => onDeleteVersion?.(v.id)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors" title="Delete version">
+                        <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
                   ))}

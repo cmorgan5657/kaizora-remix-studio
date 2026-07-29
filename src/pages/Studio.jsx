@@ -226,6 +226,39 @@ export default function Studio() {
     setShots((prev) => prev.map((s) => (s.id === shotId ? { ...s, name } : s)));
   };
 
+  const handleDeleteVersion = async (versionId) => {
+    await base44.entities.ShotVersion.delete(versionId);
+    setVersions((prev) => prev.filter((v) => v.id !== versionId));
+  };
+
+  const handleAddShot = async () => {
+    const seq = sequences.find((s) => s.id === activeSequenceId) || sequences[0];
+    if (!seq) return;
+    const shot = await base44.entities.Shot.create({
+      sequenceId: seq.id,
+      projectId,
+      name: `Shot ${shots.length + 1}`,
+      orderIndex: shots.length,
+      status: 'draft',
+    });
+    setShots((prev) => [...prev, shot]);
+    setSelectedShotId(shot.id);
+  };
+
+  const handleDuplicateShot = async (shotId) => {
+    const shot = shots.find((s) => s.id === shotId);
+    if (!shot) return;
+    const { id, created_date, updated_date, created_by_id, currentVersionId, status, orderIndex, name, ...rest } = shot;
+    const dup = await base44.entities.Shot.create({
+      ...rest,
+      name: `${name} (copy)`,
+      orderIndex: shots.length,
+      status: 'draft',
+    });
+    setShots((prev) => [...prev, dup]);
+    setSelectedShotId(dup.id);
+  };
+
   const handleToggleFavorite = async (versionId, currentFavorite) => {
     await base44.entities.ShotVersion.update(versionId, { isFavorite: !currentFavorite });
     setVersions((prev) => prev.map((v) => (v.id === versionId ? { ...v, isFavorite: !currentFavorite } : v)));
@@ -308,7 +341,7 @@ export default function Studio() {
             </main>
 
             <aside className="w-[340px] flex-shrink-0 border-l border-border max-[1399px]:hidden overflow-hidden">
-              <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} />
+              <ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} />
             </aside>
 
             <button onClick={() => setLeftDrawerOpen(true)} className="hidden max-[1099px]:flex absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 items-center justify-center bg-panel border border-border border-l-0 rounded-r-md text-muted-foreground hover:text-foreground transition-colors z-30">›</button>
@@ -323,7 +356,7 @@ export default function Studio() {
             {rightDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setRightDrawerOpen(false)} />
-                <div className="absolute right-0 top-0 bottom-0 w-[340px] z-50 border-l border-border overflow-hidden"><ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} /></div>
+                <div className="absolute right-0 top-0 bottom-0 w-[340px] z-50 border-l border-border overflow-hidden"><ShotsVersionsPanel shots={shots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} /></div>
               </>
             )}
           </>
