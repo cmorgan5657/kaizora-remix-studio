@@ -8,6 +8,7 @@ import BottomBar from '@/components/studio/BottomBar';
 import ProjectStatePanel from '@/components/studio/ProjectStatePanel';
 import ShotWorkspace from '@/components/studio/ShotWorkspace';
 import ShotsVersionsPanel from '@/components/studio/ShotsVersionsPanel';
+import LockEditorDialog from '@/components/studio/LockEditorDialog';
 
 export default function Studio() {
   const { projectId } = useParams();
@@ -22,6 +23,7 @@ export default function Studio() {
   const [saving, setSaving] = useState(false);
   const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
   const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
+  const [editingLock, setEditingLock] = useState(null);
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -74,7 +76,19 @@ export default function Studio() {
   const addEnvLock = () => handleAddLock('EnvironmentLock', { name: 'New Environment', description: '', interiorExterior: 'interior', scale: 'Room', isActive: true, lockStrength: 75 }, setEnvLocks);
   const addLightingLock = () => handleAddLock('LightingLock', { name: 'New Lighting', keyDirection: 'N', keyIntensity: 75, fillRatio: 40, colorTemperature: 5600, timeOfDay: 'Day', mood: 'Natural', isActive: true, lockStrength: 75 }, setLightingLocks);
 
-  const panelProps = { characters, styleLocks, envLocks, lightingLocks, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock };
+  const handleUpdateLock = async (type, id, data) => {
+    const setters = { StyleLock: setStyleLocks, EnvironmentLock: setEnvLocks, LightingLock: setLightingLocks };
+    setters[type]((prev) => prev.map((l) => (l.id === id ? { ...l, ...data } : l)));
+    await base44.entities[type].update(id, data);
+  };
+  const handleToggleLockActive = (type, id, currentActive) => handleUpdateLock(type, id, { isActive: !currentActive });
+  const handleEditLock = (type, id) => {
+    const lists = { StyleLock: styleLocks, EnvironmentLock: envLocks, LightingLock: lightingLocks };
+    const lock = lists[type].find((l) => l.id === id);
+    if (lock) setEditingLock({ type, lock });
+  };
+
+  const panelProps = { characters, styleLocks, envLocks, lightingLocks, onAddCharacter: handleAddCharacter, onAddStyleLock: addStyleLock, onAddEnvLock: addEnvLock, onAddLightingLock: addLightingLock, onEditLock: handleEditLock, onToggleLockActive: handleToggleLockActive };
 
   if (loading) {
     return (
@@ -157,6 +171,18 @@ export default function Studio() {
       </div>
 
       <BottomBar seed={project.projectSeed} seedLocked={project.seedLocked} seedScope={seedScope} onToggleSeedLock={handleToggleSeedLock} onRandomizeSeed={handleRandomizeSeed} cost="1 credit" />
+
+      {editingLock && (
+        <LockEditorDialog
+          lockType={editingLock.type}
+          lock={editingLock.lock}
+          onClose={() => setEditingLock(null)}
+          onUpdate={(data) => {
+            handleUpdateLock(editingLock.type, editingLock.lock.id, data);
+            setEditingLock((prev) => ({ ...prev, lock: { ...prev.lock, ...data } }));
+          }}
+        />
+      )}
 
       <div className="hidden max-[799px]:flex fixed inset-0 z-[100] bg-background items-center justify-center p-8">
         <div className="text-center max-w-xs">

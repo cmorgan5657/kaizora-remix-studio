@@ -1,12 +1,13 @@
 import { RotateCcw } from 'lucide-react';
 
-export default function ControlSlider({ label, value, onChange, min = 0, max = 100, step = 1, defaultValue = 50, unit = '' }) {
+export default function ControlSlider({ label, value, onChange, min = 0, max = 100, step = 1, defaultValue = 50, unit = '', icon }) {
   const modified = value !== defaultValue;
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
           {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />}
+          {icon}
           <label className="text-xs text-muted-foreground">{label}</label>
         </div>
         <div className="flex items-center gap-1.5">
