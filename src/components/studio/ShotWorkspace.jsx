@@ -190,7 +190,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
       </div>
 
       <div className="border-t border-border bg-panel">
-        <div className="flex items-center px-2 border-b border-border overflow-x-auto scrollbar-thin">
+        <div className="flex items-center justify-evenly px-2 border-b border-border overflow-x-auto scrollbar-thin">
           {TABS.map((tab) => (
             <button
               key={tab}
