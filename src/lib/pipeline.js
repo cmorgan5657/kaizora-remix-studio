@@ -26,6 +26,7 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, cha
   let currentStageId = 'resolve';
   let measureResult = { scores: null, remedies: [], artifacts: [] };
   let videoUrl = null;
+  let generatedClipUrls = [];
   let enhancedPayload = payload;
 
   try {
@@ -70,6 +71,7 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, cha
         // INTEGRATION POINT: call video generation adapter
         const result = await generateVideo({ ...enhancedPayload, qualityTier });
         videoUrl = result.videoUrl;
+        generatedClipUrls = result.clipUrls || (videoUrl ? [videoUrl] : []);
       }
 
       if (stage.id === 'postprocess') {
@@ -104,6 +106,7 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, cha
     const versionNumber = (existingVersions?.length || 0) + 1;
     const version = await base44.entities.ShotVersion.create({
       shotId, versionNumber, videoUrl,
+      clipUrls: generatedClipUrls.length > 0 ? generatedClipUrls : (videoUrl ? [videoUrl] : []),
       thumbnailUrl: null,
       resolvedPayload: enhancedPayload, resolvedSeed: enhancedPayload.seed, creditCost: creditsCharged, qualityTier,
     });

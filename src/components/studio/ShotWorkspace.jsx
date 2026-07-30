@@ -167,7 +167,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
                 ))}
               </div>
               <div className="w-full flex-1 min-h-0">
-                <VideoPlayer videoUrl={generation.version.videoUrl} thumbnailUrl={generation.version.thumbnailUrl} duration={timing.duration} resolution={timing.resolution} />
+                <VideoPlayer videoUrl={generation.version.videoUrl} clipUrls={generation.version.clipUrls} thumbnailUrl={generation.version.thumbnailUrl} duration={timing.duration} resolution={timing.resolution} />
               </div>
               <div className="text-xs text-muted-foreground text-center">Version {generation.version.versionNumber} · {generation.version.creditCost} credits · Seed {generation.version.resolvedSeed}</div>
             </>

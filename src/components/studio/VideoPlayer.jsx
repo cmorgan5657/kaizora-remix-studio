@@ -1,24 +1,53 @@
 import { useRef, useState, useEffect } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Repeat, VolumeX, Volume2, Maximize } from 'lucide-react';
 
-export default function VideoPlayer({ videoUrl, thumbnailUrl, duration, resolution }) {
+export default function VideoPlayer({ videoUrl, clipUrls, thumbnailUrl, duration, resolution }) {
+  const allClips = (clipUrls && clipUrls.length > 0) ? clipUrls : (videoUrl ? [videoUrl] : []);
+  const totalClips = allClips.length;
+  const [currentClip, setCurrentClip] = useState(0);
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [loop, setLoop] = useState(true);
   const [muted, setMuted] = useState(true);
 
+  const currentUrl = allClips[currentClip] || videoUrl;
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = muted;
-      videoRef.current.loop = loop;
+      videoRef.current.loop = totalClips <= 1 ? loop : false;
     }
-  }, [muted, loop]);
+  }, [muted, loop, totalClips, currentClip]);
+
+  useEffect(() => {
+    if (videoRef.current && playing) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [currentClip]);
+
+  useEffect(() => {
+    setCurrentClip(0);
+    setCurrentTime(0);
+    setPlaying(false);
+  }, [allClips.join(',')]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
     if (playing) { videoRef.current.pause(); setPlaying(false); }
     else { videoRef.current.play().catch(() => {}); setPlaying(true); }
+  };
+
+  const handleEnded = () => {
+    if (currentClip < totalClips - 1) {
+      setCurrentClip(currentClip + 1);
+      setPlaying(true);
+    } else if (loop) {
+      setCurrentClip(0);
+      setPlaying(true);
+    } else {
+      setPlaying(false);
+    }
   };
 
   const frameStep = (dir) => {
@@ -44,13 +73,18 @@ export default function VideoPlayer({ videoUrl, thumbnailUrl, duration, resoluti
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex-1 min-h-0 relative bg-black rounded-md overflow-hidden group">
-        <video ref={videoRef} src={videoUrl} poster={thumbnailUrl} className="w-full h-full object-contain" onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)} onEnded={() => setPlaying(false)} onClick={togglePlay} />
-        {!playing && videoUrl && (
+        <video ref={videoRef} src={currentUrl} poster={currentClip === 0 ? thumbnailUrl : undefined} className="w-full h-full object-contain" onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)} onEnded={handleEnded} onClick={togglePlay} />
+        {!playing && currentUrl && (
           <button onClick={togglePlay} className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors" title="Play">
             <span className="w-16 h-16 rounded-full bg-accent/90 hover:bg-accent flex items-center justify-center shadow-lg transition-transform hover:scale-110">
               <Play className="w-7 h-7 text-accent-foreground ml-1" fill="currentColor" />
             </span>
           </button>
+        )}
+        {totalClips > 1 && (
+          <div className="absolute top-2 right-2 px-2 py-0.5 text-[10px] rounded bg-black/60 text-white">
+            Clip {currentClip + 1}/{totalClips}
+          </div>
         )}
       </div>
       <div className="flex items-center gap-2 px-2 py-1.5 bg-panel border-t border-border">
@@ -63,7 +97,7 @@ export default function VideoPlayer({ videoUrl, thumbnailUrl, duration, resoluti
         <button onClick={() => setMuted(!muted)} className="p-1 text-muted-foreground hover:text-foreground" title="Mute">{muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}</button>
         <button onClick={fullscreen} className="p-1 text-muted-foreground hover:text-foreground" title="Fullscreen"><Maximize className="w-3.5 h-3.5" /></button>
       </div>
-      <div className="text-xs text-muted-foreground px-2 py-0.5 text-right">{resolution || '1080p'} · {duration || 5}s · 24fps</div>
+      <div className="text-xs text-muted-foreground px-2 py-0.5 text-right">{resolution || '1080p'} · {duration || 5}s · 24fps{totalClips > 1 ? ` · ${totalClips} clips` : ''}</div>
     </div>
   );
 }

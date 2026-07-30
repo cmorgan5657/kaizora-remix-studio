@@ -429,7 +429,7 @@ export default function Studio() {
       setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
       try {
         const result = await runPipeline({
-          projectId, shotId: shot.id, payload: { ...payload, seed }, qualityTier: 'Draft',
+          projectId, shotId: shot.id, payload: { ...payload, seed, duration: shot.duration }, qualityTier: 'Draft',
           character: null, styleLock: null, envLock: null, lightingLock: null,
           postProcess: { faceRestoration: { enabled: false }, upscale: { enabled: false }, colorGrade: { enabled: false } },
           onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })),

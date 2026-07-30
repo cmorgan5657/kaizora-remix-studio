@@ -23,19 +23,35 @@ function structuredError(stage, message) {
 }
 
 // INTEGRATION POINT: video generation model — calls Base44 GenerateVideo
+// Supports multi-clip generation for shots longer than 8 seconds
 export async function generateVideo(payload, { signal, onProgress } = {}) {
-  const duration = payload.duration <= 4 ? 4 : payload.duration >= 8 ? 8 : 6;
+  const requestedDuration = payload.duration || 6;
+  const maxClipDuration = 8;
+  const clipsNeeded = Math.max(1, Math.ceil(requestedDuration / maxClipDuration));
+  const clipDuration = requestedDuration <= 4 ? 4 : maxClipDuration;
   const aspectRatio = payload.aspectRatio === '9:16' ? '9:16' : '16:9';
-  const { url } = await base44.integrations.Core.GenerateVideo({
-    prompt: payload.positivePrompt || 'cinematic scene',
-    duration,
-    aspect_ratio: aspectRatio,
-  });
+
+  const clipUrls = [];
+  for (let i = 0; i < clipsNeeded; i++) {
+    if (signal?.aborted) throw new Error('Cancelled');
+    const clipPrompt = clipsNeeded > 1
+      ? `${payload.positivePrompt || 'cinematic scene'} [Part ${i + 1} of ${clipsNeeded}: ${i === 0 ? 'beginning of the scene' : i === clipsNeeded - 1 ? 'conclusion of the scene' : 'continuation of the scene'}]`
+      : (payload.positivePrompt || 'cinematic scene');
+    const { url } = await base44.integrations.Core.GenerateVideo({
+      prompt: clipPrompt,
+      duration: clipDuration,
+      aspect_ratio: aspectRatio,
+    });
+    clipUrls.push(url);
+    if (onProgress) onProgress(Math.round(((i + 1) / clipsNeeded) * 100));
+  }
+
   return {
-    videoUrl: url,
+    videoUrl: clipUrls[0],
+    clipUrls,
     frameUrls: [],
     seed: payload.seed,
-    metadata: { duration: payload.duration, fps: payload.fps, resolution: payload.resolution },
+    metadata: { duration: requestedDuration, fps: payload.fps, resolution: payload.resolution, clips: clipsNeeded },
   };
 }
 
