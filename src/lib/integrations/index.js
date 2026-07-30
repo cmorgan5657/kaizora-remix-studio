@@ -31,12 +31,15 @@ export async function generateVideo(payload, { signal, onProgress } = {}) {
   const clipDuration = requestedDuration <= 4 ? 4 : maxClipDuration;
   const aspectRatio = payload.aspectRatio === '9:16' ? '9:16' : '16:9';
 
+  const characterIdentity = payload.characterIdentity || '';
+  const charPrefix = characterIdentity ? `[CHARACTER IDENTITY — maintain this exact person in every frame: ${characterIdentity}] ` : '';
+
   const clipUrls = [];
   for (let i = 0; i < clipsNeeded; i++) {
     if (signal?.aborted) throw new Error('Cancelled');
     const clipPrompt = clipsNeeded > 1
-      ? `${payload.positivePrompt || 'cinematic scene'} [Part ${i + 1} of ${clipsNeeded}: ${i === 0 ? 'beginning of the scene' : i === clipsNeeded - 1 ? 'conclusion of the scene' : 'continuation of the scene'}]`
-      : (payload.positivePrompt || 'cinematic scene');
+      ? `${charPrefix}${payload.positivePrompt || 'cinematic scene'} [Part ${i + 1} of ${clipsNeeded}: ${i === 0 ? 'beginning of the scene' : i === clipsNeeded - 1 ? 'conclusion of the scene' : 'continuation of the scene'}]`
+      : `${charPrefix}${payload.positivePrompt || 'cinematic scene'}`;
     const { url } = await base44.integrations.Core.GenerateVideo({
       prompt: clipPrompt,
       duration: clipDuration,

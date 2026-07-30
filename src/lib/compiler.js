@@ -37,11 +37,30 @@ export function compilePrompt(input) {
 
   const segments = [];
 
-  if (shotType) segments.push({ key: 'shotType', text: shotType, source: 'Camera' });
+  let characterIdentity = null;
   if (character) {
-    const charText = character.tier === 'trained' && character.triggerToken ? character.triggerToken : character.identityStatement;
-    if (charText) segments.push({ key: 'character', text: charText, source: 'Character Lock' });
+    if (character.tier === 'trained' && character.triggerToken) {
+      characterIdentity = character.triggerToken;
+      segments.push({ key: 'character', text: `${character.triggerToken} (trained character — maintain exact appearance throughout)`, source: 'Character Lock' });
+    } else {
+      const parts = [];
+      if (character.identityStatement) parts.push(character.identityStatement);
+      const physical = [];
+      if (character.ageRange) physical.push(`${character.ageRange}-year-old`);
+      if (character.genderPresentation) physical.push(character.genderPresentation);
+      if (character.height || character.build) physical.push(`${[character.height, character.build].filter(Boolean).join(', ')} build`);
+      if (character.skinToneDescription || character.skinTone) physical.push(`${character.skinToneDescription || character.skinTone} skin`);
+      const hair = [character.hairColor, character.hairLength, character.hairTexture, character.hairStyle].filter(Boolean).join(' ');
+      if (hair) physical.push(`${hair} hair`);
+      const eyes = [character.eyeColor, character.eyeShape].filter(Boolean).join(' ');
+      if (eyes) physical.push(`${eyes} eyes`);
+      if (character.facialStructure) physical.push(`${character.facialStructure} face`);
+      if (physical.length > 0) parts.push(physical.join(', '));
+      characterIdentity = parts.join('. ');
+      if (characterIdentity) segments.push({ key: 'character', text: `CHARACTER (maintain this exact appearance in every frame): ${characterIdentity}`, source: 'Character Lock' });
+    }
   }
+  if (shotType) segments.push({ key: 'shotType', text: shotType, source: 'Camera' });
   if (wardrobe?.description) segments.push({ key: 'wardrobe', text: wardrobe.description, source: 'Wardrobe' });
   if (intent) segments.push({ key: 'intent', text: intent, source: 'Shot Description' });
   if (environment) {
@@ -128,5 +147,6 @@ export function compilePrompt(input) {
     conditioningChannels,
     postProcessChain,
     referenceConditioning,
+    characterIdentity,
   };
 }

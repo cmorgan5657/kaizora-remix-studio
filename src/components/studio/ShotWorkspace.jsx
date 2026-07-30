@@ -82,7 +82,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
       shotType: `${camera.shotType} shot, ${camera.cameraMove} move`,
       cameraParams: camera,
       motionParams: motion,
-      character: activeCharacter ? { identityStatement: activeCharacter.identityStatement, negativePromptFragment: activeCharacter.negativePromptFragment, tier: activeCharacter.tier, triggerToken: activeCharacter.id ? `kzr_char_${activeCharacter.id.slice(-4)}` : null } : null,
+      character: activeCharacter ? { identityStatement: activeCharacter.identityStatement, negativePromptFragment: activeCharacter.negativePromptFragment, tier: activeCharacter.tier, triggerToken: activeCharacter.id ? `kzr_char_${activeCharacter.id.slice(-4)}` : null, ageRange: activeCharacter.ageRange, genderPresentation: activeCharacter.genderPresentation, height: activeCharacter.height, build: activeCharacter.build, skinTone: activeCharacter.skinTone, skinToneDescription: activeCharacter.skinToneDescription, hairColor: activeCharacter.hairColor, hairLength: activeCharacter.hairLength, hairTexture: activeCharacter.hairTexture, hairStyle: activeCharacter.hairStyle, eyeColor: activeCharacter.eyeColor, eyeShape: activeCharacter.eyeShape, facialStructure: activeCharacter.facialStructure } : null,
       style: activeStyle ? { colorGrade: activeStyle.colorGrade, filmStock: activeStyle.filmStock, lens: activeStyle.lens } : null,
       environment: activeEnv ? { description: activeEnv.description, interiorExterior: activeEnv.interiorExterior, scale: activeEnv.scale } : null,
       lighting: activeLight ? { mood: activeLight.mood, timeOfDay: activeLight.timeOfDay, keyDirection: activeLight.keyDirection } : null,
