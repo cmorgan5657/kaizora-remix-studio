@@ -1,6 +1,6 @@
 // INTEGRATION LAYER — Uniform adapter interface for all external providers
 // Each adapter: async function, accepts { signal, onProgress }, returns structured result
-// All stubbed with realistic delays and mock data. Marked: INTEGRATION POINT
+import { base44 } from '@/api/base44Client';
 
 function simulateDelay(ms, onProgress, signal) {
   return new Promise((resolve, reject) => {
@@ -22,16 +22,20 @@ function structuredError(stage, message) {
   return err;
 }
 
-// INTEGRATION POINT: video generation model
+// INTEGRATION POINT: video generation model — calls Base44 GenerateVideo
 export async function generateVideo(payload, { signal, onProgress } = {}) {
-  const delays = { Draft: 4000, Standard: 12000, Final: 25000 };
-  const delay = delays[payload.qualityTier] || 4000;
-  await simulateDelay(delay, onProgress, signal);
+  const duration = payload.duration <= 4 ? 4 : payload.duration >= 8 ? 8 : 6;
+  const aspectRatio = payload.aspectRatio === '9:16' ? '9:16' : '16:9';
+  const { url } = await base44.integrations.Core.GenerateVideo({
+    prompt: payload.positivePrompt || 'cinematic scene',
+    duration,
+    aspect_ratio: aspectRatio,
+  });
   return {
-    videoUrl: `https://cdn.kaizora.studio/gen/${payload.seed}.mp4`,
-    frameUrls: Array.from({ length: 6 }, (_, i) => `https://cdn.kaizora.studio/gen/${payload.seed}_f${i}.jpg`),
+    videoUrl: url,
+    frameUrls: [],
     seed: payload.seed,
-    metadata: { duration: payload.duration, fps: payload.fps, resolution: payload.resolution }
+    metadata: { duration: payload.duration, fps: payload.fps, resolution: payload.resolution },
   };
 }
 
@@ -79,23 +83,19 @@ export async function extractDepth(imageUrl, { signal, onProgress } = {}) {
   return { depthMapUrl: imageUrl.replace(/\.jpg$/, '_depth.jpg') };
 }
 
-// INTEGRATION POINT: face restoration
+// INTEGRATION POINT: face restoration — pass-through (not yet wired to real provider)
 export async function restoreFaces(videoUrl, referenceImages, config, { signal, onProgress } = {}) {
-  await simulateDelay(3000, onProgress, signal);
-  return { videoUrl: videoUrl.replace(/\.mp4$/, '_restored.mp4'), framesRestored: Math.floor(Math.random() * 40) + 10 };
+  return { videoUrl, framesRestored: 0 };
 }
 
-// INTEGRATION POINT: upscale
+// INTEGRATION POINT: upscale — pass-through (not yet wired to real provider)
 export async function upscale(videoUrl, targetResolution, { signal, onProgress } = {}) {
-  const delays = { '1080p': 2000, '1440p': 4000, '4K': 8000 };
-  await simulateDelay(delays[targetResolution] || 2000, onProgress, signal);
-  return { videoUrl: videoUrl.replace(/\.mp4$/, `_upscaled_${targetResolution}.mp4`) };
+  return { videoUrl };
 }
 
-// INTEGRATION POINT: color grade (deterministic — real image processing, not inference)
+// INTEGRATION POINT: color grade — pass-through (not yet wired to real provider)
 export async function colorGrade(videoUrl, styleParams, { signal, onProgress } = {}) {
-  await simulateDelay(1500, onProgress, signal);
-  return { videoUrl: videoUrl.replace(/\.mp4$/, '_graded.mp4') };
+  return { videoUrl };
 }
 
 // INTEGRATION POINT: text composite

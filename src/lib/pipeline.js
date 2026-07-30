@@ -104,7 +104,7 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, cha
     const versionNumber = (existingVersions?.length || 0) + 1;
     const version = await base44.entities.ShotVersion.create({
       shotId, versionNumber, videoUrl,
-      thumbnailUrl: `https://cdn.kaizora.studio/shots/${shotId}/v${versionNumber}.jpg`,
+      thumbnailUrl: null,
       resolvedPayload: enhancedPayload, resolvedSeed: enhancedPayload.seed, creditCost: creditsCharged, qualityTier,
     });
 
