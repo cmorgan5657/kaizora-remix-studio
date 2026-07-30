@@ -1,4 +1,4 @@
-export const TOKEN_BUDGET = 200;
+export const TOKEN_BUDGET = 1500;
 
 const QUALITY_MODIFIERS = 'high quality, detailed, sharp focus, professional, cinematic';
 const ARTIFACT_SUPPRESSION = 'blurry, distorted, deformed, disfigured, bad anatomy, extra limbs, missing limbs, duplicate, watermark, text artifacts, low quality, jpeg artifacts, mutated hands, fused fingers, too many fingers';

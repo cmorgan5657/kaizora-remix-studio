@@ -24,7 +24,7 @@ export function parseIntent(text) {
   const objectMatch = lower.match(/\b(?:grab|throw|catch|push|pull|pick up|set down|hold|reach)\s+(?:a\s+|the\s+|an\s+)?(\w+)/);
   if (objectMatch) chips.push({ type: 'Object', value: objectMatch[1] });
 
-  const appearanceMatch = APPEARANCE_KEYWORDS.find((k) => lower.includes(k));
+  const appearanceMatch = text.length < 200 ? APPEARANCE_KEYWORDS.find((k) => lower.includes(k)) : null;
   const conflict = appearanceMatch
     ? { word: appearanceMatch, message: 'Your character is already defined. Describing appearance here can conflict with your character lock.' }
     : null;
