@@ -95,12 +95,12 @@ Script:
 ${script}`;
 }
 
-function buildShotPrompt(script, scenes, hasRefs) {
+function buildShotPrompt(script, scenes, hasRefs, characterSheet) {
   return `You are a professional AI film director and cinematographer for Kaizora Remix Studio. Based on the scene breakdown below, build a COMPLETE sequence of detailed shots that tell the full story — scene by scene, beat by beat.
 
 SCENE BREAKDOWN:
 ${JSON.stringify(scenes, null, 2)}
-
+${characterSheet ? '\nCHARACTER SHEET (SOURCE OF TRUTH FOR CONSISTENCY):\n' + characterSheet + '\nCONSISTENCY PIPELINE: Every shot MUST describe the character using the EXACT physical attributes from the character sheet above. The character\'s hair color, eye color, skin tone, build, height, and facial structure must remain identical across ALL shots — this is non-negotiable. Do not invent or deviate from the character\'s appearance. If multiple shots feature the same character, they must look like the same person.\n' : ''}
 CRITICAL REQUIREMENTS:
 - Build shots for EVERY scene. Do not skip any scene. Each scene should get 1-4 shots depending on its complexity.
 - Each shot should be 10, 12, or 15 seconds long.
@@ -161,11 +161,12 @@ Then provide:
 If you found missing beats, ADD them as new shots in correctedShots. The correctedShots array should be the complete, final, accurate shot list.`;
 }
 
-export async function runQuickBuild({ script, context, referenceImageUrls, onPhaseUpdate }) {
-  const fileUrls = referenceImageUrls?.length > 0 ? referenceImageUrls : null;
+export async function runQuickBuild({ script, context, referenceImageUrls, characterSheet, characterReferenceUrls, onPhaseUpdate }) {
+  const allReferenceUrls = [...(referenceImageUrls || []), ...(characterReferenceUrls || [])];
+  const fileUrls = allReferenceUrls.length > 0 ? allReferenceUrls : null;
 
   // Phase 1: Scene Breakdown
-  onPhaseUpdate?.({ phase: 'breaking-down', message: '📖 Analyzing script and breaking into scenes…' });
+  onPhaseUpdate?.({ phase: 'breaking-down', message: '📖 Analyzing reference assets and breaking script into scenes…' });
   const sceneResponse = await base44.integrations.Core.InvokeLLM({
     prompt: `${context}\n\n${buildScenePrompt(script)}`,
     response_json_schema: SCENE_SCHEMA,
@@ -174,9 +175,9 @@ export async function runQuickBuild({ script, context, referenceImageUrls, onPha
   const scenes = sceneResponse.scenes || [];
 
   // Phase 2: Build detailed shots per scene
-  onPhaseUpdate?.({ phase: 'building-shots', message: `🎬 Building detailed shots for ${scenes.length} scenes…` });
+  onPhaseUpdate?.({ phase: 'building-shots', message: `🎬 Building detailed shots for ${scenes.length} scenes using character sheets for consistency…` });
   const shotResponse = await base44.integrations.Core.InvokeLLM({
-    prompt: `${context}\n\n${buildShotPrompt(script, scenes, !!fileUrls)}`,
+    prompt: `${context}\n\n${buildShotPrompt(script, scenes, !!fileUrls, characterSheet)}`,
     response_json_schema: SHOT_SCHEMA,
     file_urls: fileUrls,
   });

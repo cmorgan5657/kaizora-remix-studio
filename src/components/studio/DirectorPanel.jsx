@@ -12,6 +12,24 @@ const QUICK_ACTIONS = [
   { id: 'continuity', label: 'Check continuity', icon: ShieldCheck },
 ];
 
+function buildCharacterSheet(char) {
+  if (!char) return null;
+  let sheet = `CHARACTER SHEET — ${char.name} (${char.role || 'Supporting'}, ${char.tier || 'described'} tier):\n`;
+  sheet += `- Identity: ${char.identityStatement || 'Not specified'}\n`;
+  if (char.ageRange) sheet += `- Age: ${char.ageRange}\n`;
+  if (char.genderPresentation) sheet += `- Gender Presentation: ${char.genderPresentation}\n`;
+  if (char.height) sheet += `- Height: ${char.height}\n`;
+  if (char.build) sheet += `- Build: ${char.build}\n`;
+  if (char.skinToneDescription || char.skinTone) sheet += `- Skin Tone: ${char.skinToneDescription || char.skinTone}\n`;
+  const hairParts = [char.hairColor, char.hairLength, char.hairTexture, char.hairStyle].filter(Boolean);
+  if (hairParts.length > 0) sheet += `- Hair: ${hairParts.join(', ')}\n`;
+  const eyeParts = [char.eyeColor, char.eyeShape ? char.eyeShape + ' shape' : null].filter(Boolean);
+  if (eyeParts.length > 0) sheet += `- Eyes: ${eyeParts.join(', ')}\n`;
+  if (char.facialStructure) sheet += `- Facial Structure: ${char.facialStructure}\n`;
+  if (char.negativePromptFragment) sheet += `- Negative (do NOT show): ${char.negativePromptFragment}\n`;
+  return sheet;
+}
+
 export default function DirectorPanel({ project, characters, shots, sequences, styleLocks, envLocks, lightingLocks, selectedShot, references, onCreateShots, onApplyIntent, onAutoBuild, onQuickBuild, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -57,10 +75,22 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
 
       if (action === 'quick-build') {
         const refUrls = (references || []).filter((r) => r.type === 'image').map((r) => r.url);
+        const activeChar = characters?.find((c) => c.isActive);
+        let characterSheet = null;
+        let characterReferenceUrls = [];
+        if (activeChar) {
+          characterSheet = buildCharacterSheet(activeChar);
+          try {
+            const charRefs = await base44.entities.CharacterReference.filter({ characterId: activeChar.id });
+            characterReferenceUrls = charRefs.filter((r) => r.qcStatus !== 'block' && r.imageUrl).map((r) => r.imageUrl);
+          } catch (e) { /* ignore */ }
+        }
         const result = await runQuickBuild({
           script: text,
           context,
           referenceImageUrls: refUrls,
+          characterSheet,
+          characterReferenceUrls,
           onPhaseUpdate: ({ message }) => {
             setMessages((prev) => [...prev, { role: 'assistant', content: message, isProgress: true }]);
           },
