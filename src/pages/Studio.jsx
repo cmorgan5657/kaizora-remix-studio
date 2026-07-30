@@ -16,6 +16,7 @@ import ShortcutsHelp from '@/components/studio/ShortcutsHelp';
 import OnboardingHighlight from '@/components/studio/OnboardingHighlight';
 import DirectorPanel from '@/components/studio/DirectorPanel';
 import ProjectOverview from '@/components/studio/ProjectOverview';
+import RenderFilmDialog from '@/components/studio/RenderFilmDialog';
 import { runPipeline } from '@/lib/pipeline';
 
 export default function Studio() {
@@ -46,6 +47,7 @@ export default function Studio() {
   const [continuityFlags, setContinuityFlags] = useState([]);
   const [directorOpen, setDirectorOpen] = useState(true);
   const [showOverview, setShowOverview] = useState(false);
+  const [filmDialogOpen, setFilmDialogOpen] = useState(false);
   const [references, setReferences] = useState([]);
   const [externalPrompt, setExternalPrompt] = useState('');
 
@@ -469,7 +471,7 @@ export default function Studio() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} onOpenSettings={() => setProjectSettingsOpen(true)} onOpenHelp={() => setShortcutsHelpOpen(true)} directorOpen={directorOpen} onToggleDirector={() => setDirectorOpen(!directorOpen)} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} onAddStyleLock={addStyleLock} onAddEnvLock={addEnvLock} onAddLightingLock={addLightingLock} onEditLock={handleEditLock} onToggleLockActive={handleToggleLockActive} />
+      <TopBar project={project} onRename={handleRename} activeWorkspace={activeWorkspace} onWorkspaceChange={handleWorkspaceChange} saving={saving} onOpenCredits={() => setCreditDashboardOpen(true)} onExport={handleExport} canExport={versions.length > 0} exporting={exporting} onOpenSettings={() => setProjectSettingsOpen(true)} onOpenHelp={() => setShortcutsHelpOpen(true)} directorOpen={directorOpen} onToggleDirector={() => setDirectorOpen(!directorOpen)} onRenderFilm={() => setFilmDialogOpen(true)} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} onAddStyleLock={addStyleLock} onAddEnvLock={addEnvLock} onAddLightingLock={addLightingLock} onEditLock={handleEditLock} onToggleLockActive={handleToggleLockActive} />
 
       <div className="flex-1 flex overflow-hidden relative">
         {activeWorkspace === 'studio' ? (
@@ -561,6 +563,10 @@ export default function Studio() {
 
       {creditDashboardOpen && (
         <CreditDashboard projectId={projectId} project={project} onClose={() => setCreditDashboardOpen(false)} onUpdateBudget={handleUpdateBudget} />
+      )}
+
+      {filmDialogOpen && (
+        <RenderFilmDialog project={project} shots={shots} onClose={() => setFilmDialogOpen(false)} />
       )}
 
       {editingLock && (

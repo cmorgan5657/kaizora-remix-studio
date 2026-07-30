@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { HelpCircle, Download, Check, Loader2, Settings, Clapperboard, Palette, Mountain, Sun } from 'lucide-react';
+import { HelpCircle, Download, Check, Loader2, Settings, Clapperboard, Palette, Mountain, Sun, Film } from 'lucide-react';
 import LockNavDropdown from './LockNavDropdown';
 
 const WORKSPACES = [
@@ -9,7 +9,7 @@ const WORKSPACES = [
   { id: 'sequence', label: 'SEQUENCE' },
 ];
 
-export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving, onOpenCredits, onExport, canExport, exporting, onOpenSettings, onOpenHelp, directorOpen, onToggleDirector, styleLocks, envLocks, lightingLocks, onAddStyleLock, onAddEnvLock, onAddLightingLock, onEditLock, onToggleLockActive }) {
+export default function TopBar({ project, onRename, activeWorkspace, onWorkspaceChange, saving, onOpenCredits, onExport, canExport, exporting, onOpenSettings, onOpenHelp, directorOpen, onToggleDirector, onRenderFilm, styleLocks, envLocks, lightingLocks, onAddStyleLock, onAddEnvLock, onAddLightingLock, onEditLock, onToggleLockActive }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(project?.name || '');
   const inputRef = useRef(null);
@@ -80,6 +80,9 @@ export default function TopBar({ project, onRename, activeWorkspace, onWorkspace
         </button>
         <button onClick={onOpenHelp} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Keyboard shortcuts">
           <HelpCircle className="w-4 h-4" />
+        </button>
+        <button onClick={onRenderFilm} className="px-3 py-1.5 text-xs font-medium text-secondary-foreground bg-card-raised border border-border rounded-md hover:border-accent hover:text-accent transition-colors flex items-center gap-1.5" title="Render film from accepted shots">
+          <Film className="w-3.5 h-3.5" /> Render Film
         </button>
         <button onClick={onExport} disabled={!canExport || exporting} className="px-3 py-1.5 text-xs font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
           {exporting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Exporting…</> : 'Export'}
