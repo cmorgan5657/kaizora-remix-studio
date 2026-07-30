@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Film, Clock, Star, GitBranch, Trash2, Scissors, Check, Copy, Clapperboard } from 'lucide-react';
 import ConsistencyDriftIndicator from './ConsistencyDriftIndicator';
+import ShotThumbnail from './ShotThumbnail';
 
 export default function ShotsVersionsPanel({ shots, references, onSelectShot, selectedShotId, versions, onToggleFavorite, onDeleteShot, onAcceptVersion, onRenameShot, onDeleteVersion, onAddShot, onDuplicateShot, onOpenDirector, shotVideoMap }) {
   const [editingShotId, setEditingShotId] = useState(null);
@@ -44,12 +45,8 @@ export default function ShotsVersionsPanel({ shots, references, onSelectShot, se
             <div key={shot.id}>
               <div onClick={() => onSelectShot?.(shot.id)} className={`p-2 rounded-md bg-card border transition-colors cursor-pointer ${selectedShotId === shot.id ? 'border-accent' : 'border-border hover:border-border-active'}`}>
                 <div className="flex items-center gap-2">
-                  <div className="w-14 h-10 rounded bg-card-raised flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {shotVideoMap?.[shot.id] ? (
-                      <video src={shotVideoMap[shot.id]} muted preload="metadata" className="w-full h-full object-cover" />
-                    ) : (
-                      <Film className="w-3.5 h-3.5 text-muted-foreground" />
-                    )}
+                  <div className="w-14 h-10 rounded bg-card-raised flex-shrink-0 overflow-hidden">
+                    <ShotThumbnail videoUrl={shotVideoMap?.[shot.id]} className="w-full h-full" />
                   </div>
                   <div className="flex-1 min-w-0">
                     {editingShotId === shot.id ? (

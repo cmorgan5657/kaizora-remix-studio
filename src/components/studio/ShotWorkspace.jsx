@@ -308,7 +308,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
             </>
           )}
           {pendingQuickBuildCount > 0 && generation?.status === 'complete' && (
-            <button onClick={onGenerateNextQuickBuildShot} className="px-4 py-1.5 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ring-2 ring-accent ring-offset-2 ring-offset-panel animate-pulse">
+            <button onClick={onGenerateNextQuickBuildShot} className="px-4 py-1.5 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
               <ArrowRight className="w-4 h-4" /> Generate Next Shot ({pendingQuickBuildCount} left)
             </button>
           )}
