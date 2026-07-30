@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Film, Loader2, Check, AlertCircle, RefreshCw, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { Film, Loader2, Check, AlertCircle, RefreshCw, Copy, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import { compilePrompt } from '@/lib/compiler';
 import { parseIntent } from '@/lib/intentParser';
 import IntentChips from './IntentChips';
@@ -41,7 +41,7 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references, directorOpen, externalPrompt, onExternalPromptChange }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references, directorOpen, externalPrompt, onExternalPromptChange, pendingQuickBuildCount, onGenerateNextQuickBuildShot }) {
   const ASPECT_STYLE = directorOpen ? ASPECT_STYLE_DIRECTOR_OPEN : ASPECT_STYLE_DIRECTOR_CLOSED;
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
@@ -306,6 +306,11 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
                 </button>
               )}
             </>
+          )}
+          {pendingQuickBuildCount > 0 && generation?.status === 'complete' && (
+            <button onClick={onGenerateNextQuickBuildShot} className="px-4 py-1.5 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors flex items-center gap-2 ring-2 ring-accent ring-offset-2 ring-offset-panel animate-pulse">
+              <ArrowRight className="w-4 h-4" /> Generate Next Shot ({pendingQuickBuildCount} left)
+            </button>
           )}
           <button onClick={handleGenerate} disabled={isGenerating || !!blockingError} data-onboarding="generate-btn" className="px-4 py-1.5 text-sm font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
             {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : 'Generate'}

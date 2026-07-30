@@ -58,6 +58,7 @@ export default function Studio() {
     } catch { return []; }
   });
   const [externalPrompt, setExternalPrompt] = useState('');
+  const [pendingQuickBuild, setPendingQuickBuild] = useState([]);
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -413,6 +414,28 @@ export default function Studio() {
     if (!selectedShotId && newShots.length > 0) setSelectedShotId(newShots[0].id);
   };
 
+  const generateSingleQuickBuildShot = async (pendingItem) => {
+    const { shot, seed, payload, activeCharacter, activeStyle, activeEnv, activeLight } = pendingItem;
+    setSelectedShotId(shot.id);
+    setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
+    try {
+      const result = await runPipeline({
+        projectId, shotId: shot.id, payload: { ...payload, seed, duration: shot.duration, generationMode: references.length > 0 ? 'image2video' : 'text2video', selectedModel: 'veo3' }, qualityTier: 'Draft',
+        character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight,
+        postProcess: { faceRestoration: { enabled: !!activeCharacter, threshold: 12, strength: 60 }, upscale: { enabled: false }, colorGrade: { enabled: !!activeStyle } },
+        onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })),
+        onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })),
+      });
+      await base44.entities.Shot.update(shot.id, { status: 'complete', currentVersionId: result.version.id });
+      setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
+      setGeneration((prev) => ({ ...prev, status: 'complete', version: result.version, scores: result.scores, remedies: result.remedies }));
+    } catch (error) {
+      await base44.entities.Shot.update(shot.id, { status: 'failed' });
+      setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'failed' } : s)));
+      setGeneration((prev) => ({ ...prev, status: 'failed', error: error.message }));
+    }
+  };
+
   const handleQuickBuild = async (shotSuggestions) => {
     let seq = sequences.find((s) => s.id === activeSequenceId) || sequences[0];
     if (!seq) {
@@ -440,8 +463,7 @@ export default function Studio() {
     const activeEnv = envLocks.find((l) => l.isActive);
     const activeLight = lightingLocks.find((l) => l.isActive);
 
-    for (const shot of newShots) {
-      setSelectedShotId(shot.id);
+    const pending = newShots.map((shot) => {
       const seed = resolvedSeed ?? Math.floor(Math.random() * 1000000);
       const payload = compilePrompt({
         intent: shot.intentText || '', shotType: `${shot.shotType || 'Medium'} shot, ${shot.cameraMove || 'Static'} move`,
@@ -454,24 +476,18 @@ export default function Studio() {
         lockStrengths: { character: activeCharacter?.lockStrength, style: activeStyle?.lockStrength, environment: activeEnv?.lockStrength, lighting: activeLight?.lockStrength },
         references,
       });
-      setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
-      try {
-        const result = await runPipeline({
-          projectId, shotId: shot.id, payload: { ...payload, seed, duration: shot.duration, generationMode: references.length > 0 ? 'image2video' : 'text2video', selectedModel: 'veo3' }, qualityTier: 'Draft',
-          character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight,
-          postProcess: { faceRestoration: { enabled: !!activeCharacter, threshold: 12, strength: 60 }, upscale: { enabled: false }, colorGrade: { enabled: !!activeStyle } },
-          onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })),
-          onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })),
-        });
-        await base44.entities.Shot.update(shot.id, { status: 'complete', currentVersionId: result.version.id });
-        setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
-        setGeneration((prev) => ({ ...prev, status: 'complete', version: result.version, scores: result.scores, remedies: result.remedies }));
-      } catch (error) {
-        await base44.entities.Shot.update(shot.id, { status: 'failed' });
-        setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'failed' } : s)));
-        setGeneration((prev) => ({ ...prev, status: 'failed', error: error.message }));
-      }
-    }
+      return { shot, seed, payload, activeCharacter, activeStyle, activeEnv, activeLight };
+    });
+
+    setPendingQuickBuild(pending.slice(1));
+    await generateSingleQuickBuildShot(pending[0]);
+  };
+
+  const handleGenerateNextQuickBuildShot = async () => {
+    if (pendingQuickBuild.length === 0) return;
+    const [next, ...rest] = pendingQuickBuild;
+    setPendingQuickBuild(rest);
+    await generateSingleQuickBuildShot(next);
   };
 
   const handleAutoBuild = async (plan) => {
@@ -611,7 +627,7 @@ export default function Studio() {
                       <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                     ))}
                   </div>
-                  <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} references={references} directorOpen={directorOpen} externalPrompt={externalPrompt} onExternalPromptChange={setExternalPrompt} />
+                  <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} references={references} directorOpen={directorOpen} externalPrompt={externalPrompt} onExternalPromptChange={setExternalPrompt} pendingQuickBuildCount={pendingQuickBuild.length} onGenerateNextQuickBuildShot={handleGenerateNextQuickBuildShot} />
                 </>
               )}
             </main>

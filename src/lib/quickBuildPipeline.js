@@ -104,13 +104,21 @@ ${JSON.stringify(scenes, null, 2)}
 CRITICAL REQUIREMENTS:
 - Build shots for EVERY scene. Do not skip any scene. Each scene should get 1-4 shots depending on its complexity.
 - Each shot should be 10, 12, or 15 seconds long.
-- Each shot's intentText must be EXTREMELY DETAILED — write 3-5 full sentences describing: what the character does (specific actions, gestures, facial expressions), camera movement and framing, lighting and mood, environment details, and emotional tone. Include specific details from the script — character names, dialogue snippets, locations, props, costumes.
+- Each shot's intentText must be a PROFESSIONAL, EXHAUSTIVE shot description — the kind a working director writes for a shot list. Write a full paragraph (6-10 sentences) covering ALL of the following:
+  1. CHARACTER: Who is in the shot? Name them. Describe their appearance, wardrobe, and emotional state in this moment.
+  2. CHARACTER ACTION & MOVEMENT: What exactly does the character do? Describe specific physical actions, gestures, facial expressions, body language, and movement through the frame. Be choreographic — e.g., "She takes three steps forward, stops, her right hand reaching for the door handle, lips parting slightly."
+  3. CAMERA: What is the shot type, framing, and lens? How does the camera move? Describe the camera motion in detail — e.g., "Slow dolly in from medium-wide to close-up over 8 seconds, slight handheld shake for immediacy, 35mm lens with shallow depth of field."
+  4. LIGHTING: Describe the lighting setup — key light direction, intensity, color temperature, shadows, mood. e.g., "Warm golden hour light streaming from camera-left through the window, soft fill from the right, deep shadows on the far wall."
+  5. ENVIRONMENT & PRODUCTION DESIGN: Where are we? Describe the setting, props, textures, atmosphere. e.g., "A dimly lit apartment kitchen, dishes in the sink, a flickering fluorescent overhead, steam rising from a kettle on the stove."
+  6. EMOTIONAL TONE & PACING: What is the emotional register? How does this shot feel? e.g., "Tense and intimate, the silence amplifying her hesitation."
+  7. AUDIO/DIALOGUE CUES: If there is dialogue or significant sound, note it. e.g., "She whispers 'I can't do this anymore' as she turns away."
+  8. TRANSITION: How does this shot connect to the next? Note any match cuts, eyeline matches, or continuity elements.
+- The intentText will be used DIRECTLY as the video generation prompt. Every detail matters — the AI model will only know what you write. Be specific, visual, and cinematic. Do not summarize. Paint a complete picture of what the viewer will see and feel.
 - Each shot should flow naturally into the next — think about transitions, continuity, and pacing.
-- The intentText will be used directly as the video generation prompt, so make it cinematic and visually descriptive.
 ${hasRefs ? '- Use the attached reference images as the visual source of truth for appearance, style, and setting. Describe how each shot relates to what you see in the references.\n' : ''}
 For each shot provide:
 - name: Short descriptive name (e.g., "Maya enters the alley")
-- intentText: 3-5 SENTENCES of detailed cinematic description
+- intentText: A FULL PARAGRAPH (6-10 sentences) of professional, exhaustive cinematic description covering ALL aspects above
 - shotType: One of: ${SHOT_TYPES}
 - cameraMove: One of: ${CAMERA_MOVES}
 - duration: 10, 12, or 15 seconds
@@ -148,7 +156,7 @@ Then provide:
 - missingBeats: Array of story beats from the script not covered by any shot
 - inaccuracies: Array of { shotName, issue, correction } for shots that don't match the script
 - overallAssessment: A summary paragraph of the accuracy analysis
-- correctedShots: If ANY shots need correction (due to inaccuracies, missing details, or missing beats that should be added as new shots), provide the FULL corrected shot list here. If no corrections are needed, return the original shots unchanged. Each shot must have: name, intentText, shotType, cameraMove, duration, sceneName.
+- correctedShots: If ANY shots need correction (due to inaccuracies, missing details, or missing beats that should be added as new shots), provide the FULL corrected shot list here. If no corrections are needed, return the original shots unchanged. Each shot must have: name, intentText (a FULL PARAGRAPH of 6-10 sentences covering character, action, camera, lighting, environment, emotion, audio, and transitions — same professional detail level as the original), shotType, cameraMove, duration, sceneName.
 
 If you found missing beats, ADD them as new shots in correctedShots. The correctedShots array should be the complete, final, accurate shot list.`;
 }
