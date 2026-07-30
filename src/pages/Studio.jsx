@@ -48,7 +48,12 @@ export default function Studio() {
   const [directorOpen, setDirectorOpen] = useState(true);
   const [showOverview, setShowOverview] = useState(false);
   const [filmDialogOpen, setFilmDialogOpen] = useState(false);
-  const [references, setReferences] = useState([]);
+  const [references, setReferences] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`kzr_refs_${projectId}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
   const [externalPrompt, setExternalPrompt] = useState('');
 
   const loadData = useCallback(async () => {
@@ -429,10 +434,19 @@ export default function Studio() {
   const selectedShot = shots.find((s) => s.id === selectedShotId) || null;
 
   useEffect(() => {
-    if (!selectedShot) { setReferences([]); return; }
-    setReferences(selectedShot.referenceAssets || []);
+    if (!selectedShot) return;
+    setReferences((prev) => {
+      const shotRefs = selectedShot.referenceAssets || [];
+      const existingUrls = new Set(prev.map((r) => r.url));
+      const newRefs = shotRefs.filter((r) => !existingUrls.has(r.url));
+      return newRefs.length > 0 ? [...prev, ...newRefs] : prev;
+    });
     setExternalPrompt(selectedShot.intentText || '');
   }, [selectedShot?.id]);
+
+  useEffect(() => {
+    localStorage.setItem(`kzr_refs_${projectId}`, JSON.stringify(references));
+  }, [references, projectId]);
 
   // Receive external prompt + reference asset sent from another page via URL query params
   useEffect(() => {
