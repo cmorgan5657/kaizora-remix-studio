@@ -376,6 +376,38 @@ export default function Studio() {
     if (!selectedShotId && newShots.length > 0) setSelectedShotId(newShots[0].id);
   };
 
+  const handleAutoBuild = async (plan) => {
+    setSaving(true);
+    try {
+      if (plan.styleLock) {
+        await base44.entities.StyleLock.create({ projectId, name: plan.styleLock.name || 'Auto Style', colorGrade: plan.styleLock.colorGrade || 'Natural', filmStock: plan.styleLock.filmStock || 'Digital Clean', lens: plan.styleLock.lens || 'Standard 35mm', isActive: true, lockStrength: 75 });
+      }
+      if (plan.environmentLock) {
+        await base44.entities.EnvironmentLock.create({ projectId, name: plan.environmentLock.name || 'Auto Environment', description: plan.environmentLock.description || '', interiorExterior: plan.environmentLock.interiorExterior || 'interior', scale: plan.environmentLock.scale || 'Room', isActive: true, lockStrength: 75 });
+      }
+      if (plan.lightingLock) {
+        await base44.entities.LightingLock.create({ projectId, name: plan.lightingLock.name || 'Auto Lighting', mood: plan.lightingLock.mood || 'Natural', timeOfDay: plan.lightingLock.timeOfDay || 'Day', keyDirection: plan.lightingLock.keyDirection || 'N', keyIntensity: 75, fillRatio: 40, colorTemperature: 5600, isActive: true, lockStrength: 75 });
+      }
+      for (const char of plan.characters || []) {
+        await base44.entities.Character.create({ projectId, name: char.name || 'Unnamed', role: ['Lead', 'Supporting', 'Background', 'Narrator'].includes(char.role) ? char.role : 'Supporting', identityStatement: char.identityStatement || '', ageRange: char.ageRange, genderPresentation: char.genderPresentation, height: char.height, build: char.build, skinTone: char.skinTone, hairColor: char.hairColor, hairLength: char.hairLength, eyeColor: char.eyeColor, tier: 'described', sheetStrength: 0, isActive: true, lockStrength: 75 });
+      }
+      let shotOrder = shots.length;
+      for (let si = 0; si < (plan.sequences || []).length; si++) {
+        const seq = plan.sequences[si];
+        const newSeq = await base44.entities.Sequence.create({ projectId, name: seq.name || `Sequence ${sequences.length + si + 1}`, orderIndex: sequences.length + si });
+        await Promise.all((seq.shots || []).map((s, i) => base44.entities.Shot.create({
+          sequenceId: newSeq.id, projectId, name: s.name || `Shot ${shotOrder + i + 1}`, intentText: s.intentText || '', shotType: s.shotType, cameraMove: s.cameraMove, duration: s.duration || 5, orderIndex: shotOrder + i, status: 'draft', referenceAssets: references,
+        })));
+        shotOrder += (seq.shots || []).length;
+      }
+      await loadData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleApplyIntent = async (intentText) => {
     if (!selectedShotId) return;
     await base44.entities.Shot.update(selectedShotId, { intentText });
@@ -458,7 +490,7 @@ export default function Studio() {
 
             <aside className={`flex-shrink-0 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px] max-[1399px]:hidden'}`}>
               {directorOpen ? (
-                <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onClose={() => setDirectorOpen(false)} />
+                <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} references={references} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuild} onClose={() => setDirectorOpen(false)} />
               ) : (
                 <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />
                             )}
@@ -476,7 +508,7 @@ export default function Studio() {
             {rightDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setRightDrawerOpen(false)} />
-                <div className={`absolute right-0 top-0 bottom-0 z-50 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px]'}`}>{directorOpen ? <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onClose={() => { setDirectorOpen(false); setRightDrawerOpen(false); }} /> : <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />}</div>
+                <div className={`absolute right-0 top-0 bottom-0 z-50 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px]'}`}>{directorOpen ? <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} references={references} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuild} onClose={() => { setDirectorOpen(false); setRightDrawerOpen(false); }} /> : <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />}</div>
               </>
             )}
           </>

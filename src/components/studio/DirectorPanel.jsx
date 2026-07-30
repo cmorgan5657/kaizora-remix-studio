@@ -1,16 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { Clapperboard, Send, Loader2, Film, FileText, Wand2, ShieldCheck, X } from 'lucide-react';
+import { Clapperboard, Send, Loader2, Film, FileText, Wand2, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import DirectorMessage from './DirectorMessage';
 
 const QUICK_ACTIONS = [
+  { id: 'auto-build', label: 'Auto-Build', icon: Sparkles },
   { id: 'script', label: 'Break down script', icon: FileText },
   { id: 'prompt', label: 'Refine prompt', icon: Wand2 },
   { id: 'shots', label: 'Suggest shots', icon: Film },
   { id: 'continuity', label: 'Check continuity', icon: ShieldCheck },
 ];
 
-export default function DirectorPanel({ project, characters, shots, sequences, styleLocks, envLocks, lightingLocks, selectedShot, onCreateShots, onApplyIntent, onClose }) {
+export default function DirectorPanel({ project, characters, shots, sequences, styleLocks, envLocks, lightingLocks, selectedShot, references, onCreateShots, onApplyIntent, onAutoBuild, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -54,8 +55,14 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
       const context = buildContext();
       let prompt = text;
       let schema = null;
+      let fileUrls = null;
 
-      if (action === 'script') {
+      if (action === 'auto-build') {
+        const refImageUrls = (references || []).filter((r) => r.type === 'image').map((r) => r.url);
+        prompt = `You are a professional AI film director and production designer for Kaizora Remix Studio. The creator has given you a script${refImageUrls.length > 0 ? ' and reference images (attached as files)' : ''}. Build out the ENTIRE production:\n\n1. CHARACTERS: Identify every character. For each provide name, role (one of: Lead, Supporting, Background, Narrator), and a full identityStatement with age, gender presentation, height, build, skin tone, hair color, hair length, and eye color.${refImageUrls.length > 0 ? ' Use the reference images as the visual source of truth for appearance.' : ''}\n2. STYLE LOCK: Define the visual style — name, colorGrade, filmStock, lens.\n3. ENVIRONMENT LOCK: Define the primary setting — name, description, interiorExterior (interior or exterior), scale.\n4. LIGHTING LOCK: Define the lighting — name, mood, timeOfDay, keyDirection (N/S/E/W/NW/NE/SW/SE/Top/Bottom).\n5. SEQUENCES & SHOTS: Break the script into sequences (scenes), each containing shots. For each shot: name, intentText (what happens), shotType, cameraMove, duration (2-10s).\n\nShot types: Extreme Wide, Wide, Full, Medium Wide, Medium, Medium Close, Close Up, Extreme Close Up, Over the Shoulder, POV, Two Shot, Insert\nCamera moves: Static, Dolly In, Dolly Out, Truck Left, Truck Right, Pedestal Up, Pedestal Down, Pan Left, Pan Right, Tilt Up, Tilt Down, Orbit Left, Orbit Right, Crane Up, Crane Down, Push In, Pull Out, Handheld Follow, Steadicam Follow, Zoom In, Zoom Out\n\nScript:\n${text}`;
+        schema = { type: 'object', properties: { title: { type: 'string' }, summary: { type: 'string' }, characters: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, role: { type: 'string' }, identityStatement: { type: 'string' }, ageRange: { type: 'number' }, genderPresentation: { type: 'string' }, height: { type: 'string' }, build: { type: 'string' }, skinTone: { type: 'string' }, hairColor: { type: 'string' }, hairLength: { type: 'string' }, eyeColor: { type: 'string' } } } }, styleLock: { type: 'object', properties: { name: { type: 'string' }, colorGrade: { type: 'string' }, filmStock: { type: 'string' }, lens: { type: 'string' } } }, environmentLock: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' }, interiorExterior: { type: 'string' }, scale: { type: 'string' } } }, lightingLock: { type: 'object', properties: { name: { type: 'string' }, mood: { type: 'string' }, timeOfDay: { type: 'string' }, keyDirection: { type: 'string' } } }, sequences: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, shots: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, intentText: { type: 'string' }, shotType: { type: 'string' }, cameraMove: { type: 'string' }, duration: { type: 'number' } } } } } } } } };
+        fileUrls = refImageUrls.length > 0 ? refImageUrls : null;
+      } else if (action === 'script') {
         prompt = `Break down this script into individual shots for AI video production. For each shot provide:\n- name: Short descriptive name\n- intentText: What happens in the shot (character action, camera movement, mood)\n- shotType: One of: Extreme Wide, Wide, Full, Medium Wide, Medium, Medium Close, Close Up, Extreme Close Up, Over the Shoulder, POV, Two Shot, Insert\n- cameraMove: One of: Static, Dolly In, Dolly Out, Truck Left, Truck Right, Pedestal Up, Pedestal Down, Pan Left, Pan Right, Tilt Up, Tilt Down, Orbit Left, Orbit Right, Crane Up, Crane Down, Push In, Pull Out, Handheld Follow, Steadicam Follow, Zoom In, Zoom Out\n- duration: Duration in seconds (2-10)\n\nScript:\n${text}`;
         schema = { type: 'object', properties: { summary: { type: 'string' }, shots: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, intentText: { type: 'string' }, shotType: { type: 'string' }, cameraMove: { type: 'string' }, duration: { type: 'number' } } } } } };
       } else if (action === 'prompt') {
@@ -72,11 +79,14 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `${context}\n\n${prompt}`,
         response_json_schema: schema,
+        file_urls: fileUrls,
       });
 
       let assistantMsg;
       if (schema && response) {
-        if (response.shots) {
+        if (response.characters || response.sequences) {
+          assistantMsg = { role: 'assistant', content: response.summary || `Here's your production plan.`, autoBuildPlan: response };
+        } else if (response.shots) {
           assistantMsg = { role: 'assistant', content: response.summary || `Here are ${response.shots.length} shots I suggest.`, shotSuggestions: response.shots };
         } else if (response.intentText) {
           assistantMsg = { role: 'assistant', content: response.notes || "Here's a refined prompt:", promptSuggestion: response.intentText };
@@ -103,6 +113,14 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
   const handleApplyIntent = (intentText) => {
     onApplyIntent(intentText);
     setMessages((prev) => [...prev, { role: 'assistant', content: `✓ Applied the prompt to "${selectedShot?.name || 'the selected shot'}". Switch to the INTENT tab to review and generate.` }]);
+  };
+
+  const handleAutoBuildClick = async (plan) => {
+    await onAutoBuild(plan);
+    setMessages((prev) => [
+      ...prev.map((m) => m.autoBuildPlan === plan ? { ...m, built: true } : m),
+      { role: 'assistant', content: `✓ Built your project — characters, locks, sequences, and shots are ready in the Studio.` }
+    ]);
   };
 
   return (
@@ -132,7 +150,7 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
           </div>
         )}
         {messages.map((msg, i) => (
-          <DirectorMessage key={i} message={msg} hasSelectedShot={!!selectedShot} onCreateShots={handleCreateShots} onApplyIntent={handleApplyIntent} />
+          <DirectorMessage key={i} message={msg} hasSelectedShot={!!selectedShot} onCreateShots={handleCreateShots} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuildClick} />
         ))}
         {loading && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground px-2">
@@ -158,9 +176,9 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={activeAction === 'script' ? 'Paste script here...' : activeAction === 'continuity' ? 'Any specific concerns? (optional)' : 'Ask the director anything...'}
+            placeholder={activeAction === 'auto-build' ? 'Paste your full script here...' : activeAction === 'script' ? 'Paste script here...' : activeAction === 'continuity' ? 'Any specific concerns? (optional)' : 'Ask the director anything...'}
             className="flex-1 bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring resize-none scrollbar-thin"
-            rows={activeAction === 'script' ? 5 : 2}
+            rows={activeAction === 'script' || activeAction === 'auto-build' ? 5 : 2}
           />
           <button onClick={handleSend} disabled={!input.trim() || loading} className="p-2 text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0">
             <Send className="w-4 h-4" />

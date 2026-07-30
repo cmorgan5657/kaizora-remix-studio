@@ -1,6 +1,6 @@
-import { User, Clapperboard, Plus, Check } from 'lucide-react';
+import { User, Clapperboard, Plus, Check, Sparkles } from 'lucide-react';
 
-export default function DirectorMessage({ message, hasSelectedShot, onCreateShots, onApplyIntent }) {
+export default function DirectorMessage({ message, hasSelectedShot, onCreateShots, onApplyIntent, onAutoBuild }) {
   const isUser = message.role === 'user';
 
   return (
@@ -30,6 +30,40 @@ export default function DirectorMessage({ message, hasSelectedShot, onCreateShot
               </button>
             ) : (
               <div className="flex items-center gap-1 text-xs text-success mt-1"><Check className="w-3.5 h-3.5" /> Added to project</div>
+            )}
+          </div>
+        )}
+
+        {message.autoBuildPlan && (
+          <div className="mt-2 text-left space-y-2">
+            {message.autoBuildPlan.title && <div className="text-xs font-semibold text-foreground">🎬 {message.autoBuildPlan.title}</div>}
+            {message.autoBuildPlan.characters?.length > 0 && (
+              <div className="p-2 rounded-md bg-card border border-border">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{message.autoBuildPlan.characters.length} Characters</div>
+                {message.autoBuildPlan.characters.map((c, i) => (
+                  <div key={i} className="text-xs text-secondary-foreground mb-0.5"><span className="font-medium text-foreground">{c.name}</span> <span className="text-muted-foreground">({c.role})</span> — {c.identityStatement}</div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              {message.autoBuildPlan.styleLock && <div className="flex-1 p-1.5 rounded-md bg-card border border-border"><div className="text-[10px] uppercase tracking-wide text-muted-foreground">Style</div><div className="text-xs text-foreground">{message.autoBuildPlan.styleLock.name}</div></div>}
+              {message.autoBuildPlan.environmentLock && <div className="flex-1 p-1.5 rounded-md bg-card border border-border"><div className="text-[10px] uppercase tracking-wide text-muted-foreground">Environment</div><div className="text-xs text-foreground">{message.autoBuildPlan.environmentLock.name}</div></div>}
+              {message.autoBuildPlan.lightingLock && <div className="flex-1 p-1.5 rounded-md bg-card border border-border"><div className="text-[10px] uppercase tracking-wide text-muted-foreground">Lighting</div><div className="text-xs text-foreground">{message.autoBuildPlan.lightingLock.name}</div></div>}
+            </div>
+            {message.autoBuildPlan.sequences?.map((seq, i) => (
+              <div key={i} className="p-2 rounded-md bg-card border border-border">
+                <div className="text-xs font-medium text-foreground mb-1">{seq.name} <span className="text-muted-foreground">({seq.shots?.length || 0} shots)</span></div>
+                {seq.shots?.map((shot, j) => (
+                  <div key={j} className="text-xs text-muted-foreground mb-0.5"><span className="text-secondary-foreground">{shot.name}</span> — {shot.intentText} <span className="text-border-active">·</span> {shot.shotType} <span className="text-border-active">·</span> {shot.cameraMove} <span className="text-border-active">·</span> {shot.duration}s</div>
+                ))}
+              </div>
+            ))}
+            {!message.built ? (
+              <button onClick={() => onAutoBuild(message.autoBuildPlan)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors">
+                <Sparkles className="w-3.5 h-3.5" /> Build entire project
+              </button>
+            ) : (
+              <div className="flex items-center gap-1 text-xs text-success"><Check className="w-3.5 h-3.5" /> Project built — check your studio</div>
             )}
           </div>
         )}
