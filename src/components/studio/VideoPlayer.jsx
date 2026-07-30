@@ -43,8 +43,15 @@ export default function VideoPlayer({ videoUrl, thumbnailUrl, duration, resoluti
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex-1 min-h-0 relative bg-black rounded-md overflow-hidden">
+      <div className="flex-1 min-h-0 relative bg-black rounded-md overflow-hidden group">
         <video ref={videoRef} src={videoUrl} poster={thumbnailUrl} className="w-full h-full object-contain" onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)} onEnded={() => setPlaying(false)} onClick={togglePlay} />
+        {!playing && videoUrl && (
+          <button onClick={togglePlay} className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors" title="Play">
+            <span className="w-16 h-16 rounded-full bg-accent/90 hover:bg-accent flex items-center justify-center shadow-lg transition-transform hover:scale-110">
+              <Play className="w-7 h-7 text-accent-foreground ml-1" fill="currentColor" />
+            </span>
+          </button>
+        )}
       </div>
       <div className="flex items-center gap-2 px-2 py-1.5 bg-panel border-t border-border">
         <button onClick={() => frameStep(-1)} className="p-1 text-muted-foreground hover:text-foreground" title="Frame back"><SkipBack className="w-3.5 h-3.5" /></button>
