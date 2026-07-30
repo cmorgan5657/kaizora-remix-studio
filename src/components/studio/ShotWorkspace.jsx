@@ -138,8 +138,8 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      <div className="flex-1 flex items-center justify-center p-4 min-h-0 overflow-hidden">
-        <div className={`relative w-full h-full max-h-full ${ASPECT_STYLE[project?.aspectRatio] || 'max-w-3xl'} bg-card border border-border rounded-lg flex flex-col gap-2 p-4`}>
+      <div className="flex-1 flex justify-center p-4 min-h-0 overflow-hidden">
+        <div className={`relative w-full self-stretch max-h-full ${ASPECT_STYLE[project?.aspectRatio] || 'max-w-3xl'} bg-card border border-border rounded-lg flex flex-col gap-2 p-4`}>
           {generation?.version && generation?.previousVersion && (
             <button onClick={() => setAbCompare(!abCompare)} className={`absolute top-2 right-2 z-10 px-2 py-1 text-xs rounded transition-colors ${abCompare ? 'bg-accent text-accent-foreground' : 'bg-card-raised border border-border text-muted-foreground hover:text-foreground'}`}>
               A/B Compare
