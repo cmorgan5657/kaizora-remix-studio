@@ -18,6 +18,32 @@
     "intentText": {
       "type": "string"
     },
+    "sceneContext": {
+      "type": "object",
+      "properties": {
+        "sceneName": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "keyMoments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "characters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "emotionalTone": {
+          "type": "string"
+        }
+      }
+    },
     "parsedIntent": {
       "type": "object"
     },

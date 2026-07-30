@@ -95,7 +95,7 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
             setMessages((prev) => [...prev, { role: 'assistant', content: message, isProgress: true }]);
           },
         });
-        onQuickBuild(result.shots);
+        onQuickBuild({ shots: result.shots, scenes: result.scenes });
         const report = result.accuracyReport || {};
         const accuracyLine = report.accuracyScore != null ? `\n\n📊 Accuracy Score: ${report.accuracyScore}/100` : '';
         const missingLine = report.missingBeats?.length > 0 ? `\n⚠️ Missing beats: ${report.missingBeats.join('; ')}` : '';

@@ -79,6 +79,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
     const activeLight = lightingLocks?.find((l) => l.isActive);
     return compilePrompt({
       intent: externalPrompt || '',
+      sceneContext: selectedShot?.sceneContext || null,
       shotType: `${camera.shotType} shot, ${camera.cameraMove} move`,
       cameraParams: camera,
       motionParams: motion,

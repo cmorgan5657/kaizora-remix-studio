@@ -15,6 +15,7 @@ export function compilePrompt(input) {
     character = null,
     wardrobe = null,
     intent = '',
+    sceneContext = null,
     environment = null,
     lighting = null,
     style = null,
@@ -62,6 +63,14 @@ export function compilePrompt(input) {
   }
   if (shotType) segments.push({ key: 'shotType', text: shotType, source: 'Camera' });
   if (wardrobe?.description) segments.push({ key: 'wardrobe', text: wardrobe.description, source: 'Wardrobe' });
+  if (sceneContext) {
+    const ctxParts = [];
+    if (sceneContext.summary) ctxParts.push(`SCENE CONTEXT: ${sceneContext.summary}`);
+    if (sceneContext.emotionalTone) ctxParts.push(`Emotional tone: ${sceneContext.emotionalTone}`);
+    if (sceneContext.keyMoments?.length) ctxParts.push(`Key moments in this scene: ${sceneContext.keyMoments.join('; ')}`);
+    if (sceneContext.characters?.length) ctxParts.push(`Characters present: ${sceneContext.characters.join(', ')}`);
+    if (ctxParts.length > 0) segments.push({ key: 'sceneContext', text: ctxParts.join('. '), source: 'AI Director' });
+  }
   if (intent) segments.push({ key: 'intent', text: intent, source: 'Shot Description' });
   if (environment) {
     const envParts = [environment.description, environment.interiorExterior, environment.scale].filter(Boolean);

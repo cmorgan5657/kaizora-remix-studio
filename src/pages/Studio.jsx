@@ -448,7 +448,9 @@ export default function Studio() {
     }
   };
 
-  const handleQuickBuild = async (shotSuggestions) => {
+  const handleQuickBuild = async (quickBuildData) => {
+    const shotList = quickBuildData.shots || quickBuildData;
+    const sceneList = quickBuildData.scenes || [];
     let seq = sequences.find((s) => s.id === activeSequenceId) || sequences[0];
     if (!seq) {
       seq = await base44.entities.Sequence.create({ projectId, name: 'Quick Build', orderIndex: 0 });
@@ -456,11 +458,24 @@ export default function Studio() {
       setActiveSequenceId(seq.id);
     }
     const startOrder = shots.length;
+    const sceneMap = {};
+    for (const scene of sceneList) {
+      sceneMap[scene.name] = scene;
+    }
     const newShots = [];
-    for (let i = 0; i < shotSuggestions.length; i++) {
-      const s = shotSuggestions[i];
+    for (let i = 0; i < shotList.length; i++) {
+      const s = shotList[i];
+      const matchedScene = sceneMap[s.sceneName];
+      const sceneContext = matchedScene ? {
+        sceneName: matchedScene.name,
+        summary: matchedScene.summary,
+        keyMoments: matchedScene.keyMoments || [],
+        characters: matchedScene.characters || [],
+        emotionalTone: matchedScene.emotionalTone,
+      } : null;
       const shot = await base44.entities.Shot.create({
         sequenceId: seq.id, projectId, name: s.name, intentText: s.intentText,
+        sceneContext,
         shotType: s.shotType, cameraMove: s.cameraMove, duration: s.duration || 6,
         orderIndex: startOrder + i, status: 'generating', referenceAssets: references,
         generationMode: references.length > 0 ? 'image2video' : 'text2video',
@@ -478,7 +493,8 @@ export default function Studio() {
     const pending = newShots.map((shot) => {
       const seed = resolvedSeed ?? Math.floor(Math.random() * 1000000);
       const payload = compilePrompt({
-        intent: shot.intentText || '', shotType: `${shot.shotType || 'Medium'} shot, ${shot.cameraMove || 'Static'} move`,
+        intent: shot.intentText || '', sceneContext: shot.sceneContext || null,
+        shotType: `${shot.shotType || 'Medium'} shot, ${shot.cameraMove || 'Static'} move`,
         cameraParams: { shotType: shot.shotType, cameraMove: shot.cameraMove }, motionParams: {},
         character: activeCharacter ? { identityStatement: activeCharacter.identityStatement, negativePromptFragment: activeCharacter.negativePromptFragment, tier: activeCharacter.tier, triggerToken: activeCharacter.id ? `kzr_char_${activeCharacter.id.slice(-4)}` : null, ageRange: activeCharacter.ageRange, genderPresentation: activeCharacter.genderPresentation, height: activeCharacter.height, build: activeCharacter.build, skinTone: activeCharacter.skinTone, skinToneDescription: activeCharacter.skinToneDescription, hairColor: activeCharacter.hairColor, hairLength: activeCharacter.hairLength, hairTexture: activeCharacter.hairTexture, hairStyle: activeCharacter.hairStyle, eyeColor: activeCharacter.eyeColor, eyeShape: activeCharacter.eyeShape, facialStructure: activeCharacter.facialStructure } : null,
         style: activeStyle ? { colorGrade: activeStyle.colorGrade, filmStock: activeStyle.filmStock, lens: activeStyle.lens } : null,
