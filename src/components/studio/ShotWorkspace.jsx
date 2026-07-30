@@ -241,19 +241,14 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
         <div className="p-4 min-h-[100px] max-h-[240px] overflow-y-auto scrollbar-thin">
           {activeTab === 'MODEL' && <ModelSelector mode={generationMode} model={selectedModel} onModeChange={setGenerationMode} onModelChange={setSelectedModel} hasReferences={references.length > 0} />}
           {activeTab === 'INTENT' && (
-            <div className="space-y-3">
-              <div className="text-xs text-muted-foreground">Describe what happens in this shot. Your character and locks are applied automatically.</div>
-              <textarea
-                value={externalPrompt || ''}
-                onChange={(e) => onExternalPromptChange?.(e.target.value)}
-                data-onboarding="intent-field"
-                placeholder="e.g. She walks toward the camera, stops, and looks up at the sky."
-                className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring resize-none"
-                rows={2}
-              />
-              <IntentChips chips={parsedIntent.chips} conflict={parsedIntent.conflict} onRemoveChip={removeChip} onRemoveConflict={removeConflict} />
-              <PromptInspector payload={compiledPayload} />
-            </div>
+            <textarea
+              value={externalPrompt || ''}
+              onChange={(e) => onExternalPromptChange?.(e.target.value)}
+              data-onboarding="intent-field"
+              placeholder="Describe what happens in this shot…"
+              className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring resize-none"
+              rows={3}
+            />
           )}
           {activeTab === 'CAMERA' && (
             <div className="space-y-4">
