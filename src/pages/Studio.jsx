@@ -369,7 +369,7 @@ export default function Studio() {
       shotSuggestions.map((s, i) => base44.entities.Shot.create({
         sequenceId: seq.id, projectId, name: s.name, intentText: s.intentText,
         shotType: s.shotType, cameraMove: s.cameraMove, duration: s.duration || 5,
-        orderIndex: startOrder + i, status: 'draft',
+        orderIndex: startOrder + i, status: 'draft', referenceAssets: references,
       }))
     );
     setShots((prev) => [...prev, ...newShots]);
