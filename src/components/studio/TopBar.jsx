@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { HelpCircle, Download, Check, Loader2, Settings, Clapperboard, Palette, Mountain, Sun, Film } from 'lucide-react';
+import { HelpCircle, Download, Check, Loader2, Settings, Clapperboard, List, Palette, Mountain, Sun, Film } from 'lucide-react';
 import LockNavDropdown from './LockNavDropdown';
 
 const WORKSPACES = [
@@ -71,9 +71,14 @@ export default function TopBar({ project, onRename, activeWorkspace, onWorkspace
       </div>
 
       <div className="flex items-center gap-2 flex-1 justify-end">
-        <button onClick={onToggleDirector} className={`p-1.5 transition-colors ${directorOpen ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`} title="AI Director">
-          <Clapperboard className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-0.5 bg-card rounded-md p-0.5 border border-border">
+          <button onClick={() => { if (!directorOpen) onToggleDirector(); }} className={`px-2 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1 ${directorOpen ? 'bg-card-raised text-accent' : 'text-muted-foreground hover:text-secondary-foreground'}`} title="AI Director">
+            <Clapperboard className="w-3.5 h-3.5" /> Director
+          </button>
+          <button onClick={() => { if (directorOpen) onToggleDirector(); }} className={`px-2 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1 ${!directorOpen ? 'bg-card-raised text-foreground' : 'text-muted-foreground hover:text-secondary-foreground'}`} title="Shots & Versions">
+            <List className="w-3.5 h-3.5" /> Shots
+          </button>
+        </div>
         <button onClick={onOpenCredits} className="text-xs text-secondary-foreground hover:text-accent transition-colors tabular-nums">{project?.creditBalance ?? 0} credits</button>
         <button onClick={onOpenSettings} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Project settings">
           <Settings className="w-4 h-4" />
