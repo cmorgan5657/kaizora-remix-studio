@@ -184,11 +184,6 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
               {selectedShot ? (
                 <>
                   <div className="text-sm font-medium text-foreground text-center">{selectedShot.name}</div>
-                  {selectedShot.intentText ? (
-                    <div className="text-xs text-secondary-foreground text-center max-w-sm leading-relaxed">{selectedShot.intentText}</div>
-                  ) : (
-                    <div className="text-xs text-muted-foreground">No intent set — describe what happens in this shot.</div>
-                  )}
                   <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
                     {selectedShot.shotType && <span className="px-1.5 py-0.5 rounded bg-card-raised">{selectedShot.shotType}</span>}
                     {selectedShot.cameraMove && <span className="px-1.5 py-0.5 rounded bg-card-raised">{selectedShot.cameraMove}</span>}
