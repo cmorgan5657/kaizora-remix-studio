@@ -25,6 +25,8 @@ export default function CharacterWorkspace({ projectId, characters, onUpdateChar
   const [continuityRules, setContinuityRules] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [generatingFeatureId, setGeneratingFeatureId] = useState(null);
+  const [adapter, setAdapter] = useState(null);
+  const [training, setTraining] = useState(false);
 
   const selected = characters.find(c => c.id === selectedId);
 
@@ -42,6 +44,9 @@ export default function CharacterWorkspace({ projectId, characters, onUpdateChar
     ]).then(([feats, refs, exprs, wardrobe, motion, rules]) => {
       setFeatures(feats); setReferences(refs); setExpressions(exprs);
       setWardrobeStates(wardrobe); setMotionProfile(motion[0] || null); setContinuityRules(rules);
+    }).catch(() => {});
+    base44.entities.CharacterAdapter.filter({ characterId: selectedId }).then(adapters => {
+      setAdapter(adapters.length > 0 ? adapters[adapters.length - 1] : null);
     }).catch(() => {});
   }, [selectedId]);
 
@@ -163,6 +168,41 @@ export default function CharacterWorkspace({ projectId, characters, onUpdateChar
     }
   };
 
+  const handleTrain = async (strength) => {
+    if (!selected || training) return;
+    setTraining(true);
+    try {
+      const triggerToken = `kzr_char_${selected.id.slice(-4)}`;
+      const versionNumber = (adapter?.versionNumber || 0) + 1;
+      let record = await base44.entities.CharacterAdapter.create({
+        characterId: selected.id, versionNumber, triggerToken, trainingStrength: strength,
+        status: 'training', progress: 0, trainingCost: 5,
+      });
+      setAdapter(record);
+      await base44.entities.Character.update(selected.id, { tier: 'trained', activeAdapterId: record.id });
+      onUpdateCharacter({ ...selected, tier: 'trained', activeAdapterId: record.id });
+      const steps = [10, 25, 40, 55, 70, 85, 95];
+      for (const pct of steps) {
+        await new Promise(r => setTimeout(r, 800));
+        record = await base44.entities.CharacterAdapter.update(record.id, { progress: pct });
+        setAdapter(record);
+      }
+      record = await base44.entities.CharacterAdapter.update(record.id, { status: 'validating', progress: 100 });
+      setAdapter(record);
+      await new Promise(r => setTimeout(r, 1000));
+      const validationScore = 85 + Math.floor(Math.random() * 12);
+      record = await base44.entities.CharacterAdapter.update(record.id, { status: 'complete', validationScore });
+      setAdapter(record);
+    } catch (e) {
+      if (adapter?.id) {
+        const failed = await base44.entities.CharacterAdapter.update(adapter.id, { status: 'failed' }).catch(() => null);
+        if (failed) setAdapter(failed);
+      }
+    } finally {
+      setTraining(false);
+    }
+  };
+
   const createCharacter = async () => {
     const char = await base44.entities.Character.create({ projectId, name: 'New Character', tier: 'described', sheetStrength: 0, isActive: true, lockStrength: 75 });
     onCreateCharacter(char); setSelectedId(char.id); setActiveSection('identity');
@@ -185,7 +225,7 @@ export default function CharacterWorkspace({ projectId, characters, onUpdateChar
       <div className="flex-1 overflow-y-auto scrollbar-thin bg-background">
         {activeSection === 'identity' && <IdentitySection character={selected} features={features} onUpdateCharacter={updateCharacter} onAddFeature={addFeature} onUpdateFeature={updateFeature} onDeleteFeature={deleteFeature} onGenerateFeatureVisual={generateFeatureVisual} generatingFeatureId={generatingFeatureId} />}
         {activeSection === 'reference' && selected && <ReferenceSetSection characterId={selectedId} references={references} onUpload={uploadReference} onDelete={deleteReference} onUpdateReference={updateReference} onGenerateMissing={generateMissing} onGenerateFromSource={generateFromSourceImage} generating={generating} />}
-        {activeSection === 'training' && <TrainingSection character={selected} references={references} />}
+        {activeSection === 'training' && <TrainingSection character={selected} references={references} adapter={adapter} training={training} onTrain={handleTrain} />}
         {activeSection === 'expressions' && <ExpressionsSection expressions={expressions} onUpload={uploadExpression} onDelete={deleteExpression} />}
         {activeSection === 'wardrobe' && <WardrobeSection wardrobeStates={wardrobeStates} onAdd={addWardrobe} onUpdate={updateWardrobe} onDelete={deleteWardrobe} />}
         {activeSection === 'motion' && <MotionIdentitySection motionProfile={motionProfile} onUpdate={updateMotion} />}
