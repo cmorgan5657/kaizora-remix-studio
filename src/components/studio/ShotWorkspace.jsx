@@ -20,19 +20,19 @@ import ModelSelector from './ModelSelector';
 const TABS = ['MODEL', 'INTENT', 'CAMERA', 'MOTION', 'TIMING', 'OUTPUT'];
 
 const ASPECT_STYLE_DIRECTOR_OPEN = {
-  '16:9': 'aspect-video max-w-[614px]',
-  '9:16': 'aspect-[9/16] max-w-[256px]',
-  '2.39:1': 'aspect-[2.39/1] max-w-[614px]',
-  '1:1': 'aspect-square max-w-[358px]',
-  '4:5': 'aspect-[4/5] max-w-[307px]',
+  '16:9': 'max-w-[614px]',
+  '9:16': 'max-w-[256px]',
+  '2.39:1': 'max-w-[614px]',
+  '1:1': 'max-w-[358px]',
+  '4:5': 'max-w-[307px]',
 };
 
 const ASPECT_STYLE_DIRECTOR_CLOSED = {
-  '16:9': 'aspect-video max-w-[768px]',
-  '9:16': 'aspect-[9/16] max-w-[320px]',
-  '2.39:1': 'aspect-[2.39/1] max-w-[768px]',
-  '1:1': 'aspect-square max-w-[448px]',
-  '4:5': 'aspect-[4/5] max-w-[384px]',
+  '16:9': 'max-w-[768px]',
+  '9:16': 'max-w-[320px]',
+  '2.39:1': 'max-w-[768px]',
+  '1:1': 'max-w-[448px]',
+  '4:5': 'max-w-[384px]',
 };
 
 const QUALITY_MODES = [
@@ -139,7 +139,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex-1 flex items-center justify-center p-4 min-h-0 overflow-hidden">
-        <div className={`relative w-full h-full max-h-full ${ASPECT_STYLE[project?.aspectRatio] || 'aspect-video max-w-3xl'} bg-card border border-border rounded-lg flex flex-col gap-2 p-4`}>
+        <div className={`relative w-full h-full max-h-full ${ASPECT_STYLE[project?.aspectRatio] || 'max-w-3xl'} bg-card border border-border rounded-lg flex flex-col gap-2 p-4`}>
           {generation?.version && generation?.previousVersion && (
             <button onClick={() => setAbCompare(!abCompare)} className={`absolute top-2 right-2 z-10 px-2 py-1 text-xs rounded transition-colors ${abCompare ? 'bg-accent text-accent-foreground' : 'bg-card-raised border border-border text-muted-foreground hover:text-foreground'}`}>
               A/B Compare
