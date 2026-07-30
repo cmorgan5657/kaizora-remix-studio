@@ -12,7 +12,7 @@ const STATUS_BADGE = {
   failed: 'bg-destructive/10 text-destructive',
 };
 
-export default function Timeline({ shots, sequences, activeSequenceId, onSelectSequence, onCreateSequence, onRenameSequence, onDeleteSequence, onReorder, onSelectShot, selectedShotId, onToggleSeqSeedLock, onRandomizeSeqSeed, continuityFlags }) {
+export default function Timeline({ shots, sequences, activeSequenceId, onSelectSequence, onCreateSequence, onRenameSequence, onDeleteSequence, onReorder, onSelectShot, selectedShotId, onToggleSeqSeedLock, onRandomizeSeqSeed, continuityFlags, shotVideoMap }) {
   const [editingSeqId, setEditingSeqId] = useState(null);
   const [editName, setEditName] = useState('');
 
@@ -134,8 +134,12 @@ export default function Timeline({ shots, sequences, activeSequenceId, onSelectS
                           <span className="text-xs font-medium text-muted-foreground tabular-nums">{String(index + 1).padStart(2, '0')}</span>
                           <span className={`px-1 py-0.5 text-[9px] rounded ${STATUS_BADGE[shot.status] || STATUS_BADGE.draft}`}>{STATUS_LABELS[shot.status] || 'Draft'}</span>
                         </div>
-                        <div className="w-full h-12 rounded bg-card-raised flex items-center justify-center mb-2">
-                          <Film className="w-4 h-4 text-muted-foreground" />
+                        <div className="w-full h-12 rounded bg-card-raised flex items-center justify-center mb-2 overflow-hidden">
+                          {shotVideoMap?.[shot.id] ? (
+                            <video src={shotVideoMap[shot.id]} muted preload="metadata" className="w-full h-full object-cover" />
+                          ) : (
+                            <Film className="w-4 h-4 text-muted-foreground" />
+                          )}
                         </div>
                         <div className="text-xs text-foreground truncate">{shot.name || `Shot ${index + 1}`}</div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">

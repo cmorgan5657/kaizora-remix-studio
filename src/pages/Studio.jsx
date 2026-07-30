@@ -59,6 +59,7 @@ export default function Studio() {
   });
   const [externalPrompt, setExternalPrompt] = useState('');
   const [pendingQuickBuild, setPendingQuickBuild] = useState([]);
+  const [shotVideoMap, setShotVideoMap] = useState({});
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -81,6 +82,14 @@ export default function Studio() {
       setSequences(seqs);
       if (seqs.length > 0) setActiveSequenceId(seqs[0].id);
       setShots(existingShots);
+      const allShotVersions = await Promise.all(existingShots.map((s) => base44.entities.ShotVersion.filter({ shotId: s.id }).catch(() => [])));
+      const vMap = {};
+      existingShots.forEach((shot, i) => {
+        const shotVers = allShotVersions[i] || [];
+        const current = shot.currentVersionId ? shotVers.find((v) => v.id === shot.currentVersionId) : [...shotVers].sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+        if (current && (current.videoUrl || (current.clipUrls && current.clipUrls.length > 0))) vMap[shot.id] = current.videoUrl || current.clipUrls[0];
+      });
+      setShotVideoMap(vMap);
       if (existingShots.length > 0) {
         const sorted = [...existingShots].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
         setSelectedShotId(sorted[0].id);
@@ -226,6 +235,7 @@ export default function Studio() {
       const result = await runPipeline({ projectId, shotId: shot.id, payload: finalPayload, qualityTier, character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight, postProcess: payload.postProcessChain, onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })), onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })) });
       await base44.entities.Shot.update(shot.id, { status: 'complete', currentVersionId: result.version.id });
       setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
+      setShotVideoMap((prev) => ({ ...prev, [shot.id]: result.version.videoUrl || (result.version.clipUrls && result.version.clipUrls[0]) }));
       setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version, scores: result.scores, remedies: result.remedies, previousVersion: prev.version }));
     } catch (error) {
       setGeneration((prev) => ({ ...prev, status: 'failed', error: error.message }));
@@ -260,6 +270,7 @@ export default function Studio() {
         await base44.entities.ShotVersion.update(result.version.id, { isPartialRegeneration: true, regeneratedRegion: surgical.region, regeneratedTimeRange: surgical.timeRange });
       }
       setShots((prev) => prev.map((s) => (s.id === selectedShotId ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
+      setShotVideoMap((prev) => ({ ...prev, [selectedShotId]: result.version.videoUrl || (result.version.clipUrls && result.version.clipUrls[0]) }));
       base44.entities.ShotVersion.filter({ shotId: selectedShotId }).then(setVersions).catch(() => {});
       setGeneration((prev) => ({ ...prev, status: 'complete', job: result.job, version: result.version, scores: result.scores, remedies: result.remedies, previousVersion: prev.version }));
     } catch (error) {
@@ -428,6 +439,7 @@ export default function Studio() {
       });
       await base44.entities.Shot.update(shot.id, { status: 'complete', currentVersionId: result.version.id });
       setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
+      setShotVideoMap((prev) => ({ ...prev, [shot.id]: result.version.videoUrl || (result.version.clipUrls && result.version.clipUrls[0]) }));
       setGeneration((prev) => ({ ...prev, status: 'complete', version: result.version, scores: result.scores, remedies: result.remedies }));
     } catch (error) {
       await base44.entities.Shot.update(shot.id, { status: 'failed' });
@@ -636,7 +648,7 @@ export default function Studio() {
               {directorOpen ? (
                 <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} references={references} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuild} onQuickBuild={handleQuickBuild} onClose={() => setDirectorOpen(false)} />
               ) : (
-                <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />
+                <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} shotVideoMap={shotVideoMap} />
                             )}
             </aside>
 
@@ -652,7 +664,7 @@ export default function Studio() {
             {rightDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setRightDrawerOpen(false)} />
-                <div className={`absolute right-0 top-0 bottom-0 z-50 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px]'}`}>{directorOpen ? <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} references={references} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuild} onQuickBuild={handleQuickBuild} onClose={() => { setDirectorOpen(false); setRightDrawerOpen(false); }} /> : <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />}</div>
+                <div className={`absolute right-0 top-0 bottom-0 z-50 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px]'}`}>{directorOpen ? <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} references={references} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuild} onQuickBuild={handleQuickBuild} onClose={() => { setDirectorOpen(false); setRightDrawerOpen(false); }} /> : <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} shotVideoMap={shotVideoMap} />}</div>
               </>
             )}
           </>
@@ -664,7 +676,7 @@ export default function Studio() {
             onCreateCharacter={(created) => setCharacters((prev) => [...prev, created])}
           />
         ) : (
-          <Timeline shots={shots} sequences={sequences} activeSequenceId={activeSequenceId} onSelectSequence={handleSelectSequence} onCreateSequence={handleCreateSequence} onRenameSequence={handleRenameSequence} onDeleteSequence={handleDeleteSequence} onReorder={handleReorderShots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} onToggleSeqSeedLock={handleToggleSeqSeedLock} onRandomizeSeqSeed={handleRandomizeSeqSeed} continuityFlags={continuityFlags} />
+          <Timeline shots={shots} sequences={sequences} activeSequenceId={activeSequenceId} onSelectSequence={handleSelectSequence} onCreateSequence={handleCreateSequence} onRenameSequence={handleRenameSequence} onDeleteSequence={handleDeleteSequence} onReorder={handleReorderShots} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} onToggleSeqSeedLock={handleToggleSeqSeedLock} onRandomizeSeqSeed={handleRandomizeSeqSeed} continuityFlags={continuityFlags} shotVideoMap={shotVideoMap} />
         )}
       </div>
 
