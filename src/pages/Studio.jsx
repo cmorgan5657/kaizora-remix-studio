@@ -18,6 +18,7 @@ import DirectorPanel from '@/components/studio/DirectorPanel';
 import ProjectOverview from '@/components/studio/ProjectOverview';
 import RenderFilmDialog from '@/components/studio/RenderFilmDialog';
 import { runPipeline } from '@/lib/pipeline';
+import { compilePrompt } from '@/lib/compiler';
 
 export default function Studio() {
   const { projectId } = useParams();
@@ -394,6 +395,57 @@ export default function Studio() {
     if (!selectedShotId && newShots.length > 0) setSelectedShotId(newShots[0].id);
   };
 
+  const handleQuickBuild = async (shotSuggestions) => {
+    let seq = sequences.find((s) => s.id === activeSequenceId) || sequences[0];
+    if (!seq) {
+      seq = await base44.entities.Sequence.create({ projectId, name: 'Quick Build', orderIndex: 0 });
+      setSequences([seq]);
+      setActiveSequenceId(seq.id);
+    }
+    const startOrder = shots.length;
+    const newShots = [];
+    for (let i = 0; i < shotSuggestions.length; i++) {
+      const s = shotSuggestions[i];
+      const shot = await base44.entities.Shot.create({
+        sequenceId: seq.id, projectId, name: s.name, intentText: s.intentText,
+        shotType: s.shotType, cameraMove: s.cameraMove, duration: s.duration || 6,
+        orderIndex: startOrder + i, status: 'generating', referenceAssets: references,
+        generationMode: references.length > 0 ? 'image2video' : 'text2video',
+      });
+      newShots.push(shot);
+    }
+    setShots((prev) => [...prev, ...newShots]);
+    if (newShots.length > 0) setSelectedShotId(newShots[0].id);
+
+    for (const shot of newShots) {
+      setSelectedShotId(shot.id);
+      const seed = resolvedSeed ?? Math.floor(Math.random() * 1000000);
+      const payload = compilePrompt({
+        intent: shot.intentText || '', shotType: `${shot.shotType || 'Medium'} shot, ${shot.cameraMove || 'Static'} move`,
+        cameraParams: { shotType: shot.shotType, cameraMove: shot.cameraMove }, motionParams: {},
+        character: null, style: null, environment: null, lighting: null,
+        seed, aspectRatio: project?.aspectRatio || '16:9', lockStrengths: {}, references,
+      });
+      setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
+      try {
+        const result = await runPipeline({
+          projectId, shotId: shot.id, payload: { ...payload, seed }, qualityTier: 'Draft',
+          character: null, styleLock: null, envLock: null, lightingLock: null,
+          postProcess: { faceRestoration: { enabled: false }, upscale: { enabled: false }, colorGrade: { enabled: false } },
+          onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })),
+          onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })),
+        });
+        await base44.entities.Shot.update(shot.id, { status: 'complete', currentVersionId: result.version.id });
+        setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'complete', currentVersionId: result.version.id } : s)));
+        setGeneration((prev) => ({ ...prev, status: 'complete', version: result.version, scores: result.scores, remedies: result.remedies }));
+      } catch (error) {
+        await base44.entities.Shot.update(shot.id, { status: 'failed' });
+        setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, status: 'failed' } : s)));
+        setGeneration((prev) => ({ ...prev, status: 'failed', error: error.message }));
+      }
+    }
+  };
+
   const handleAutoBuild = async (plan) => {
     setSaving(true);
     try {
@@ -538,7 +590,7 @@ export default function Studio() {
 
             <aside className={`flex-shrink-0 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px] max-[1399px]:hidden'}`}>
               {directorOpen ? (
-                <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} references={references} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuild} onClose={() => setDirectorOpen(false)} />
+                <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} references={references} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuild} onQuickBuild={handleQuickBuild} onClose={() => setDirectorOpen(false)} />
               ) : (
                 <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />
                             )}
@@ -556,7 +608,7 @@ export default function Studio() {
             {rightDrawerOpen && (
               <>
                 <div className="absolute inset-0 bg-black/50 z-40" onClick={() => setRightDrawerOpen(false)} />
-                <div className={`absolute right-0 top-0 bottom-0 z-50 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px]'}`}>{directorOpen ? <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} references={references} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuild} onClose={() => { setDirectorOpen(false); setRightDrawerOpen(false); }} /> : <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />}</div>
+                <div className={`absolute right-0 top-0 bottom-0 z-50 border-l border-border overflow-hidden ${directorOpen ? 'w-[440px]' : 'w-[340px]'}`}>{directorOpen ? <DirectorPanel project={project} characters={characters} shots={shots} sequences={sequences} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} selectedShot={selectedShot} references={references} onCreateShots={handleCreateShotsFromAI} onApplyIntent={handleApplyIntent} onAutoBuild={handleAutoBuild} onQuickBuild={handleQuickBuild} onClose={() => { setDirectorOpen(false); setRightDrawerOpen(false); }} /> : <ShotsVersionsPanel shots={shots} references={references} onSelectShot={handleSelectShot} selectedShotId={selectedShotId} versions={versions} onToggleFavorite={handleToggleFavorite} onDeleteShot={handleDeleteShot} onAcceptVersion={handleAcceptVersion} onRenameShot={handleRenameShot} onDeleteVersion={handleDeleteVersion} onAddShot={handleAddShot} onDuplicateShot={handleDuplicateShot} onOpenDirector={() => setDirectorOpen(true)} />}</div>
               </>
             )}
           </>
