@@ -139,7 +139,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex-1 flex items-center justify-center p-4 min-h-0">
-        <div className={`relative w-full ${ASPECT_STYLE[project?.aspectRatio] || 'aspect-video max-w-3xl'} bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2 overflow-y-auto scrollbar-thin p-4`}>
+        <div className={`relative w-full ${ASPECT_STYLE[project?.aspectRatio] || 'aspect-video max-w-3xl'} bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2 p-4`}>
           {generation?.version && generation?.previousVersion && (
             <button onClick={() => setAbCompare(!abCompare)} className={`absolute top-2 right-2 z-10 px-2 py-1 text-xs rounded transition-colors ${abCompare ? 'bg-accent text-accent-foreground' : 'bg-card-raised border border-border text-muted-foreground hover:text-foreground'}`}>
               A/B Compare
@@ -169,7 +169,6 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
                 <VideoPlayer videoUrl={generation.version.videoUrl} thumbnailUrl={generation.version.thumbnailUrl} duration={timing.duration} resolution={timing.resolution} />
               </div>
               <div className="text-xs text-muted-foreground text-center">Version {generation.version.versionNumber} · {generation.version.creditCost} credits · Seed {generation.version.resolvedSeed}</div>
-              {generation.scores && <ConsistencyInspector scores={generation.scores} remedies={generation.remedies || []} />}
             </>
           ) : generation?.status === 'failed' ? (
             <>
@@ -206,6 +205,12 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
           )}
         </div>
       </div>
+
+      {generation?.status === 'complete' && generation?.scores && (
+        <div className="flex-shrink-0 max-h-[160px] overflow-y-auto scrollbar-thin px-4 py-2 border-t border-border">
+          <ConsistencyInspector scores={generation.scores} remedies={generation.remedies || []} />
+        </div>
+      )}
 
       <div className="border-t border-border bg-panel flex-shrink-0">
         <div className="flex items-center justify-evenly px-2 border-b border-border overflow-x-auto scrollbar-thin">
