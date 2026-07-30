@@ -117,11 +117,7 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
 
   const handleAutoBuildClick = async (plan) => {
     await onAutoBuild(plan);
-    setMessages((prev) => [
-      ...prev.map((m) => m.autoBuildPlan === plan ? { ...m, built: true } : m),
-      { role: 'assistant', content: `✓ Built your project — characters, locks, sequences, and shots are ready in the Studio.` }
-    ]);
-    setTimeout(() => onClose(), 1500);
+    setMessages((prev) => prev.map((m) => m.autoBuildPlan === plan ? { ...m, built: true } : m));
   };
 
   return (
