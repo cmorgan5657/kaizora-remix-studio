@@ -137,7 +137,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   const blockingError = (project?.creditBalance ?? 0) < (QUALITY_CREDITS[quality] || 1) ? `Insufficient credits. Need ${QUALITY_CREDITS[quality] || 1}, have ${project?.creditBalance ?? 0}.` : null;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex-1 flex items-center justify-center p-4 min-h-0">
         <div className={`relative w-full ${ASPECT_STYLE[project?.aspectRatio] || 'aspect-video max-w-3xl'} bg-card border border-border rounded-lg flex flex-col items-center justify-center gap-2 overflow-y-auto scrollbar-thin p-4`}>
           {generation?.version && generation?.previousVersion && (
@@ -207,7 +207,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
         </div>
       </div>
 
-      <div className="border-t border-border bg-panel">
+      <div className="border-t border-border bg-panel flex-shrink-0">
         <div className="flex items-center justify-evenly px-2 border-b border-border overflow-x-auto scrollbar-thin">
           {TABS.map((tab) => (
             <button
@@ -256,7 +256,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
 
       <PreFlightValidation warnings={preFlightWarnings} blockingError={blockingError} />
 
-      <div className="flex items-center justify-evenly px-4 py-2.5 border-t border-border bg-panel gap-3 flex-wrap">
+      <div className="flex items-center justify-evenly px-4 py-2.5 border-t border-border bg-panel gap-3 flex-wrap flex-shrink-0">
         <div className="flex items-center gap-0.5 bg-card rounded-md p-0.5 border border-border">
           {QUALITY_MODES.map((q) => (
             <button
