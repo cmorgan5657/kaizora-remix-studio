@@ -77,6 +77,10 @@ export default function Studio() {
       setSequences(seqs);
       if (seqs.length > 0) setActiveSequenceId(seqs[0].id);
       setShots(existingShots);
+      if (existingShots.length > 0) {
+        const sorted = [...existingShots].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        setSelectedShotId(sorted[0].id);
+      }
       setPresets(psts);
       setActiveWorkspace(proj.activeWorkspace || 'studio');
       if (proj.seedLocked) setResolvedSeed(proj.projectSeed);
