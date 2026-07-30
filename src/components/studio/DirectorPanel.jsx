@@ -121,6 +121,7 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
       ...prev.map((m) => m.autoBuildPlan === plan ? { ...m, built: true } : m),
       { role: 'assistant', content: `✓ Built your project — characters, locks, sequences, and shots are ready in the Studio.` }
     ]);
+    setTimeout(() => onClose(), 1500);
   };
 
   return (
@@ -163,6 +164,7 @@ export default function DirectorPanel({ project, characters, shots, sequences, s
         {activeAction && (
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-accent">
+              {activeAction === 'auto-build' && '🎬 Paste your full script — the AI will build everything'}
               {activeAction === 'script' && '📋 Paste your script below'}
               {activeAction === 'prompt' && '✨ Describe what you want to see'}
               {activeAction === 'shots' && '🎬 Describe the scene or story beat'}
