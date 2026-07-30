@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 const STEPS = {
   character_needed: { selector: '[data-onboarding="add-character"]', label: 'Start here. Define your character once and it stays consistent across every shot.' },
-  intent_needed: { selector: '[data-onboarding="intent-field"]', label: 'Describe your first shot. Your character is applied automatically.' },
+  intent_needed: null,
   generate_needed: { selector: '[data-onboarding="generate-btn"]', label: 'Draft mode costs 1 credit.' },
 };
 
