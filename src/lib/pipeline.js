@@ -56,6 +56,29 @@ export async function runPipeline({ projectId, shotId, payload, qualityTier, cha
             // Analysis failed — proceed with IP-Adapter conditioning only
           }
         }
+        // Character reference analysis — use reference images to generate a detailed visual description
+        if (character?.id) {
+          try {
+            const charRefs = await base44.entities.CharacterReference.filter({ characterId: character.id });
+            const validRefs = (charRefs || []).filter((r) => r.qcStatus !== 'block' && r.imageUrl).slice(0, 4);
+            if (validRefs.length > 0) {
+              const refUrls = validRefs.map((r) => r.imageUrl);
+              const descResponse = await base44.integrations.Core.InvokeLLM({
+                prompt: 'Describe this character in precise visual detail for AI video generation. Focus on: face shape, hair color and style, eye color, skin tone, body type, and any distinguishing features. Be specific and concise. This description will be used to maintain character consistency across multiple video shots.',
+                file_urls: refUrls,
+                response_json_schema: { type: 'object', properties: { visualDescription: { type: 'string' } } },
+              });
+              if (descResponse?.visualDescription) {
+                enhancedPayload = {
+                  ...enhancedPayload,
+                  positivePrompt: `[CHARACTER VISUAL REFERENCE — ${descResponse.visualDescription}] ${enhancedPayload.positivePrompt}`,
+                };
+              }
+            }
+          } catch (e) {
+            // Character reference analysis failed — proceed with text description only
+          }
+        }
         await new Promise((r) => setTimeout(r, stage.duration));
       }
 

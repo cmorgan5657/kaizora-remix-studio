@@ -39,10 +39,10 @@ export function compilePrompt(input) {
   const segments = [];
 
   let characterIdentity = null;
+  let characterLockPrefix = '';
   if (character) {
     if (character.tier === 'trained' && character.triggerToken) {
       characterIdentity = character.triggerToken;
-      segments.push({ key: 'character', text: `${character.triggerToken} (trained character — maintain exact appearance throughout)`, source: 'Character Lock' });
     } else {
       const parts = [];
       if (character.identityStatement) parts.push(character.identityStatement);
@@ -58,11 +58,15 @@ export function compilePrompt(input) {
       if (character.facialStructure) physical.push(`${character.facialStructure} face`);
       if (physical.length > 0) parts.push(physical.join(', '));
       characterIdentity = parts.join('. ');
-      if (characterIdentity) segments.push({ key: 'character', text: `CHARACTER (maintain this exact appearance in every frame): ${characterIdentity}`, source: 'Character Lock' });
+    }
+    const lockParts = [];
+    if (characterIdentity) lockParts.push(`CHARACTER: ${characterIdentity}`);
+    if (wardrobe?.description) lockParts.push(`WARDROBE (exact clothing — do NOT change between shots): ${wardrobe.description}`);
+    if (lockParts.length > 0) {
+      characterLockPrefix = `[CHARACTER LOCK — CRITICAL CONSISTENCY: The following person must appear in EVERY frame with EXACT same appearance and clothing. Do NOT change hair color, eye color, skin tone, facial structure, body type, or clothing between shots. This is the SAME PERSON across all shots — maintain absolute visual consistency. ${lockParts.join('. ')}.] `;
     }
   }
   if (shotType) segments.push({ key: 'shotType', text: shotType, source: 'Camera' });
-  if (wardrobe?.description) segments.push({ key: 'wardrobe', text: wardrobe.description, source: 'Wardrobe' });
   if (sceneContext) {
     const ctxParts = [];
     if (sceneContext.summary) ctxParts.push(`SCENE CONTEXT: ${sceneContext.summary}`);
@@ -86,7 +90,7 @@ export function compilePrompt(input) {
   }
   segments.push({ key: 'quality', text: QUALITY_MODIFIERS, source: 'System' });
 
-  let positivePrompt = segments.map((s) => s.text).join('. ');
+  let positivePrompt = characterLockPrefix + segments.map((s) => s.text).join('. ');
   let tokenCount = estimateTokens(positivePrompt);
 
   const droppedSegments = [];
@@ -95,7 +99,7 @@ export function compilePrompt(input) {
     const seg = segments.find((s) => s.key === dropKey && !droppedSegments.includes(s));
     if (!seg) break;
     droppedSegments.push(seg);
-    positivePrompt = segments.filter((s) => !droppedSegments.includes(s)).map((s) => s.text).join('. ');
+    positivePrompt = characterLockPrefix + segments.filter((s) => !droppedSegments.includes(s)).map((s) => s.text).join('. ');
     tokenCount = estimateTokens(positivePrompt);
   }
 
@@ -157,5 +161,6 @@ export function compilePrompt(input) {
     postProcessChain,
     referenceConditioning,
     characterIdentity,
+    characterLockPrefix,
   };
 }

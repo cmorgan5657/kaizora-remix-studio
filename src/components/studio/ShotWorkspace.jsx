@@ -41,7 +41,7 @@ const QUALITY_MODES = [
   { id: 'Final', cost: '8 credits' },
 ];
 
-export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references, directorOpen, externalPrompt, onExternalPromptChange, pendingQuickBuildCount, onGenerateNextQuickBuildShot }) {
+export default function ShotWorkspace({ project, characters, styleLocks, envLocks, lightingLocks, resolvedSeed, generation, onGenerate, onRegenerate, presets, onSavePreset, selectedShot, onExport, shots, references, directorOpen, externalPrompt, onExternalPromptChange, pendingQuickBuildCount, onGenerateNextQuickBuildShot, wardrobeStates }) {
   const ASPECT_STYLE = directorOpen ? ASPECT_STYLE_DIRECTOR_OPEN : ASPECT_STYLE_DIRECTOR_CLOSED;
   const [activeTab, setActiveTab] = useState('INTENT');
   const [quality, setQuality] = useState('Draft');
@@ -89,6 +89,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
       lighting: activeLight ? { mood: activeLight.mood, timeOfDay: activeLight.timeOfDay, keyDirection: activeLight.keyDirection } : null,
       seed: resolvedSeed,
       aspectRatio: project?.aspectRatio || '16:9',
+      wardrobe: activeCharacter ? (wardrobeStates?.find((w) => w.characterId === activeCharacter.id && w.isDefault) || wardrobeStates?.find((w) => w.characterId === activeCharacter.id)) : null,
       lockStrengths: { character: activeCharacter?.lockStrength, style: activeStyle?.lockStrength, environment: activeEnv?.lockStrength, lighting: activeLight?.lockStrength },
       references,
     });

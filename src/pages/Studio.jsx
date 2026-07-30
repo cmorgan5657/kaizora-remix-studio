@@ -60,6 +60,7 @@ export default function Studio() {
   const [externalPrompt, setExternalPrompt] = useState('');
   const [pendingQuickBuild, setPendingQuickBuild] = useState([]);
   const [shotVideoMap, setShotVideoMap] = useState({});
+  const [wardrobeStates, setWardrobeStates] = useState([]);
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -489,6 +490,7 @@ export default function Studio() {
     const activeStyle = styleLocks.find((l) => l.isActive);
     const activeEnv = envLocks.find((l) => l.isActive);
     const activeLight = lightingLocks.find((l) => l.isActive);
+    const defaultWardrobe = activeCharacter ? wardrobeStates.find((w) => w.characterId === activeCharacter.id && w.isDefault) || wardrobeStates.find((w) => w.characterId === activeCharacter.id) : null;
 
     const pending = newShots.map((shot) => {
       const seed = resolvedSeed ?? Math.floor(Math.random() * 1000000);
@@ -501,6 +503,7 @@ export default function Studio() {
         environment: activeEnv ? { description: activeEnv.description, interiorExterior: activeEnv.interiorExterior, scale: activeEnv.scale } : null,
         lighting: activeLight ? { mood: activeLight.mood, timeOfDay: activeLight.timeOfDay, keyDirection: activeLight.keyDirection } : null,
         seed, aspectRatio: project?.aspectRatio || '16:9',
+        wardrobe: defaultWardrobe ? { description: defaultWardrobe.description } : null,
         lockStrengths: { character: activeCharacter?.lockStrength, style: activeStyle?.lockStrength, environment: activeEnv?.lockStrength, lighting: activeLight?.lockStrength },
         references,
       });
@@ -581,6 +584,12 @@ export default function Studio() {
     localStorage.setItem(`kzr_refs_${projectId}`, JSON.stringify(references));
   }, [references, projectId]);
 
+  useEffect(() => {
+    if (characters.length === 0) { setWardrobeStates([]); return; }
+    Promise.all(characters.map((c) => base44.entities.WardrobeState.filter({ characterId: c.id }).catch(() => [])))
+      .then((results) => setWardrobeStates(results.flat()));
+  }, [characters]);
+
   // Receive external prompt + reference asset sent from another page via URL query params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -655,7 +664,7 @@ export default function Studio() {
                       <span key={l.id} className="px-2 py-0.5 text-xs rounded bg-card-raised text-secondary-foreground flex-shrink-0">Light</span>
                     ))}
                   </div>
-                  <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} references={references} directorOpen={directorOpen} externalPrompt={externalPrompt} onExternalPromptChange={setExternalPrompt} pendingQuickBuildCount={pendingQuickBuild.length} onGenerateNextQuickBuildShot={handleGenerateNextQuickBuildShot} />
+                  <ShotWorkspace project={project} characters={characters} styleLocks={styleLocks} envLocks={envLocks} lightingLocks={lightingLocks} resolvedSeed={resolvedSeed} generation={generation} onGenerate={handleGenerate} onRegenerate={handleRegenerate} presets={presets} onSavePreset={handleSavePreset} selectedShot={selectedShot} onExport={handleExport} shots={shots} references={references} directorOpen={directorOpen} externalPrompt={externalPrompt} onExternalPromptChange={setExternalPrompt} pendingQuickBuildCount={pendingQuickBuild.length} onGenerateNextQuickBuildShot={handleGenerateNextQuickBuildShot} wardrobeStates={wardrobeStates} />
                 </>
               )}
             </main>
