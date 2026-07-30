@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Monitor, Film, LayoutGrid } from 'lucide-react';
@@ -31,6 +31,8 @@ export default function Studio() {
   const [sequences, setSequences] = useState([]);
   const [resolvedSeed, setResolvedSeed] = useState(null);
   const [generation, setGeneration] = useState({ status: 'idle', stages: {}, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
+  const generationStatusRef = useRef('idle');
+  generationStatusRef.current = generation.status;
   const [presets, setPresets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeWorkspace, setActiveWorkspace] = useState('studio');
@@ -97,7 +99,23 @@ export default function Studio() {
 
   useEffect(() => {
     if (!selectedShotId) { setVersions([]); return; }
-    base44.entities.ShotVersion.filter({ shotId: selectedShotId }).then(setVersions).catch(() => {});
+    base44.entities.ShotVersion.filter({ shotId: selectedShotId }).then((vers) => {
+      setVersions(vers);
+      if (generationStatusRef.current === 'running') return;
+      const shot = shots.find((s) => s.id === selectedShotId);
+      if (!shot || !vers || vers.length === 0) {
+        setGeneration({ status: 'idle', stages: {}, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
+        return;
+      }
+      const latest = shot.currentVersionId
+        ? vers.find((v) => v.id === shot.currentVersionId)
+        : [...vers].sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+      if (latest && (latest.videoUrl || (latest.clipUrls && latest.clipUrls.length > 0))) {
+        setGeneration({ status: 'complete', stages: {}, job: null, version: latest, previousVersion: null, scores: null, remedies: null, error: null });
+      } else {
+        setGeneration({ status: 'idle', stages: {}, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
+      }
+    }).catch(() => {});
   }, [selectedShotId]);
 
   useEffect(() => {
