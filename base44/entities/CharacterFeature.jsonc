@@ -19,6 +19,9 @@
         "neverInclude"
       ],
       "default": "distinguishing"
+    },
+    "imageUrl": {
+      "type": "string"
     }
   },
   "required": [

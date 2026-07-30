@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { User, Plus } from 'lucide-react';
-import { computeSheetData, composeIdentityStatement, composeNegativePrompt, ANGLE_SLOTS } from '@/lib/characterCompiler';
+import { computeSheetData, composeIdentityStatement, composeNegativePrompt, ANGLE_SLOTS, DISTANCE_SLOTS, LIGHTING_SLOTS } from '@/lib/characterCompiler';
 import { runQC } from '@/lib/imageQC';
 import CharacterNav from './CharacterNav';
 import CharacterCardPreview from './CharacterCardPreview';
@@ -24,6 +24,7 @@ export default function CharacterWorkspace({ projectId, characters, onUpdateChar
   const [motionProfile, setMotionProfile] = useState(null);
   const [continuityRules, setContinuityRules] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [generatingFeatureId, setGeneratingFeatureId] = useState(null);
 
   const selected = characters.find(c => c.id === selectedId);
 
@@ -98,6 +99,41 @@ export default function CharacterWorkspace({ projectId, characters, onUpdateChar
     setGenerating(false);
   };
 
+  const generateFeatureVisual = async (featureId) => {
+    const feature = features.find(f => f.id === featureId);
+    if (!feature || !feature.description) return;
+    setGeneratingFeatureId(featureId);
+    try {
+      const prompt = `Extreme close-up detail reference: ${feature.description}. ${composeIdentityStatement(selected, features)} Sharp focus, studio lighting, high detail.`;
+      const existingImages = references.filter(r => r.imageUrl).slice(0, 4).map(r => r.imageUrl);
+      const { url } = await base44.integrations.Core.GenerateImage({ prompt, existing_image_urls: existingImages.length > 0 ? existingImages : null });
+      await base44.entities.CharacterFeature.update(featureId, { imageUrl: url });
+      setFeatures(p => p.map(f => f.id === featureId ? { ...f, imageUrl: url } : f));
+    } catch (e) {}
+    setGeneratingFeatureId(null);
+  };
+
+  const generateFromSourceImage = async (sourceImageUrl) => {
+    if (!selected || !sourceImageUrl) return;
+    setGenerating(true);
+    const identity = composeIdentityStatement(selected, features);
+    const allSlots = [
+      ...ANGLE_SLOTS.map(s => ({ group: 'angle', name: s })),
+      ...DISTANCE_SLOTS.map(s => ({ group: 'distance', name: s })),
+      ...LIGHTING_SLOTS.map(s => ({ group: 'lighting', name: s })),
+    ];
+    const empty = allSlots.filter(({ group, name }) => !references.some(r => r.slotGroup === group && r.slotName === name && r.imageUrl));
+    for (const { group, name } of empty) {
+      try {
+        const prompt = `${identity} ${name} view. Professional studio reference photo, sharp focus.`;
+        const { url } = await base44.integrations.Core.GenerateImage({ prompt, existing_image_urls: [sourceImageUrl] });
+        const ref = await base44.entities.CharacterReference.create({ characterId: selectedId, slotGroup: group, slotName: name, imageUrl: url, isGenerated: true, qcStatus: 'pass', qcMessages: [], stackWeight: 100, includedInStack: false });
+        setReferences(p => [...p, ref]);
+      } catch (e) {}
+    }
+    setGenerating(false);
+  };
+
   const uploadExpression = async (name, file) => {
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     const existing = expressions.find(e => e.expressionName === name);
@@ -147,8 +183,8 @@ export default function CharacterWorkspace({ projectId, characters, onUpdateChar
     <div className="flex-1 flex overflow-hidden">
       <CharacterNav characters={characters} selectedCharacterId={selectedId} onSelectCharacter={setSelectedId} onCreateCharacter={createCharacter} activeSection={activeSection} onSelectSection={setActiveSection} sheetStrength={sheetData.strength} />
       <div className="flex-1 overflow-y-auto scrollbar-thin bg-background">
-        {activeSection === 'identity' && <IdentitySection character={selected} features={features} onUpdateCharacter={updateCharacter} onAddFeature={addFeature} onUpdateFeature={updateFeature} onDeleteFeature={deleteFeature} />}
-        {activeSection === 'reference' && selected && <ReferenceSetSection characterId={selectedId} references={references} onUpload={uploadReference} onDelete={deleteReference} onUpdateReference={updateReference} onGenerateMissing={generateMissing} generating={generating} />}
+        {activeSection === 'identity' && <IdentitySection character={selected} features={features} onUpdateCharacter={updateCharacter} onAddFeature={addFeature} onUpdateFeature={updateFeature} onDeleteFeature={deleteFeature} onGenerateFeatureVisual={generateFeatureVisual} generatingFeatureId={generatingFeatureId} />}
+        {activeSection === 'reference' && selected && <ReferenceSetSection characterId={selectedId} references={references} onUpload={uploadReference} onDelete={deleteReference} onUpdateReference={updateReference} onGenerateMissing={generateMissing} onGenerateFromSource={generateFromSourceImage} generating={generating} />}
         {activeSection === 'training' && <TrainingSection character={selected} references={references} />}
         {activeSection === 'expressions' && <ExpressionsSection expressions={expressions} onUpload={uploadExpression} onDelete={deleteExpression} />}
         {activeSection === 'wardrobe' && <WardrobeSection wardrobeStates={wardrobeStates} onAdd={addWardrobe} onUpdate={updateWardrobe} onDelete={deleteWardrobe} />}

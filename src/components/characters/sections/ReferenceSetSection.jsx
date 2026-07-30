@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Upload, Trash2, Sparkles, AlertTriangle, Check, RefreshCw, Image as ImageIcon } from 'lucide-react';
+import { Upload, Trash2, Sparkles, AlertTriangle, Check, RefreshCw, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import { ANGLE_SLOTS, DISTANCE_SLOTS, LIGHTING_SLOTS } from '@/lib/characterCompiler';
 
 function Slot({ name, reference, badge, onUpload, onDelete, error }) {
@@ -60,10 +61,13 @@ function SlotGroup({ title, slots, references, onUpload, onDelete, errors, badge
   );
 }
 
-export default function ReferenceSetSection({ characterId, references, onUpload, onDelete, onUpdateReference, onGenerateMissing, generating, generatingError }) {
+export default function ReferenceSetSection({ characterId, references, onUpload, onDelete, onUpdateReference, onGenerateMissing, onGenerateFromSource, generating, generatingError }) {
   const fileInputRef = useRef(null);
+  const sourceInputRef = useRef(null);
   const [uploadTarget, setUploadTarget] = useState(null);
   const [errors, setErrors] = useState({});
+  const [sourceImageUrl, setSourceImageUrl] = useState(null);
+  const [uploadingSource, setUploadingSource] = useState(false);
 
   const triggerUpload = (slotGroup, slotName) => {
     setUploadTarget({ slotGroup, slotName });
@@ -80,6 +84,18 @@ export default function ReferenceSetSection({ characterId, references, onUpload,
     setUploadTarget(null);
   };
 
+  const handleSourceFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploadingSource(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setSourceImageUrl(file_url);
+    } catch (err) {}
+    setUploadingSource(false);
+  };
+
   const angleRefs = references.filter(r => r.slotGroup === 'angle');
   const distRefs = references.filter(r => r.slotGroup === 'distance');
   const lightRefs = references.filter(r => r.slotGroup === 'lighting');
@@ -90,6 +106,33 @@ export default function ReferenceSetSection({ characterId, references, onUpload,
   return (
     <div className="p-6 max-w-3xl space-y-8">
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <span className="panel-title">Build from Source Image</span>
+            <p className="text-xs text-muted-foreground mt-1">Upload one reference image and generate the entire reference set from it.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <input ref={sourceInputRef} type="file" accept="image/*" className="hidden" onChange={handleSourceFile} />
+          {sourceImageUrl ? (
+            <div className="relative group">
+              <img src={sourceImageUrl} alt="Source" className="w-16 h-16 rounded-md object-cover border border-border" />
+              <button onClick={() => sourceInputRef.current?.click()} className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center" title="Replace source">
+                <RefreshCw className="w-3.5 h-3.5 text-white" />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => sourceInputRef.current?.click()} disabled={uploadingSource} className="px-3 py-2 text-xs text-muted-foreground hover:text-accent border border-dashed border-border rounded-md flex items-center gap-1.5 transition-colors disabled:opacity-40">
+              {uploadingSource ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />} Upload Source
+            </button>
+          )}
+          <button onClick={() => onGenerateFromSource?.(sourceImageUrl)} disabled={!sourceImageUrl || generating} className="px-3 py-1.5 text-xs font-medium text-accent-foreground bg-accent rounded-md hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5">
+            {generating ? <><RefreshCw className="w-3 h-3 animate-spin" /> Generating...</> : <><Sparkles className="w-3 h-3" /> Generate All from Source</>}
+          </button>
+        </div>
+      </div>
 
       <SlotGroup title="Angle Coverage" slots={ANGLE_SLOTS} references={angleRefs} onUpload={(slot) => triggerUpload('angle', slot)} onDelete={onDelete} errors={errors} />
       <SlotGroup title="Distance Coverage" slots={DISTANCE_SLOTS} references={distRefs} onUpload={(slot) => triggerUpload('distance', slot)} onDelete={onDelete} errors={errors} badgeSlot="Wide" />

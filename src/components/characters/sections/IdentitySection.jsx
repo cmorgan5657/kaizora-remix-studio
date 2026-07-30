@@ -1,4 +1,4 @@
-import { Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { composeIdentityStatement, composeNegativePrompt } from '@/lib/characterCompiler';
 
 const inputClass = 'w-full bg-card border border-border rounded-md px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring';
@@ -12,9 +12,25 @@ function Field({ label, children }) {
   );
 }
 
-function FeatureRow({ feature, onUpdate, onDelete }) {
+function FeatureRow({ feature, onUpdate, onDelete, onGenerateVisual, isGenerating }) {
   return (
     <div className="flex items-center gap-2">
+      {feature.type === 'distinguishing' && (
+        <div className="relative group flex-shrink-0">
+          {feature.imageUrl ? (
+            <>
+              <img src={feature.imageUrl} alt="" className="w-12 h-12 rounded-md object-cover border border-border" />
+              <button onClick={() => onGenerateVisual?.(feature.id)} disabled={isGenerating} className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center disabled:opacity-40" title="Regenerate visual">
+                {isGenerating ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 text-white" />}
+              </button>
+            </>
+          ) : (
+            <button onClick={() => onGenerateVisual?.(feature.id)} disabled={isGenerating || !feature.description} className="w-12 h-12 rounded-md border border-dashed border-border flex items-center justify-center bg-card/30 text-muted-foreground hover:text-accent hover:border-border-active transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title={feature.description ? 'Generate visual' : 'Add a description first'}>
+              {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            </button>
+          )}
+        </div>
+      )}
       <input value={feature.description || ''} onChange={(e) => onUpdate(feature.id, { description: e.target.value })} className={inputClass} placeholder="Describe a feature..." />
       {feature.type === 'distinguishing' && (
         <button onClick={() => onUpdate(feature.id, { isCritical: !feature.isCritical })} className={`px-2 py-1 text-xs rounded transition-colors whitespace-nowrap ${feature.isCritical ? 'bg-accent-muted text-accent' : 'bg-card border border-border text-muted-foreground'}`}>
@@ -28,7 +44,7 @@ function FeatureRow({ feature, onUpdate, onDelete }) {
   );
 }
 
-export default function IdentitySection({ character, features, onUpdateCharacter, onAddFeature, onUpdateFeature, onDeleteFeature }) {
+export default function IdentitySection({ character, features, onUpdateCharacter, onAddFeature, onUpdateFeature, onDeleteFeature, onGenerateFeatureVisual, generatingFeatureId }) {
   if (!character) return null;
   const statement = composeIdentityStatement(character, features);
   const negativePrompt = composeNegativePrompt(features);
@@ -78,7 +94,7 @@ export default function IdentitySection({ character, features, onUpdateCharacter
         <div className="space-y-2">
           {distinguishing.length === 0 ? (
             <div className="text-xs text-muted-foreground p-2 border border-dashed border-border rounded-md">Add scars, tattoos, birthmarks — mark critical ones to seed continuity rules.</div>
-          ) : distinguishing.map(f => <FeatureRow key={f.id} feature={f} onUpdate={onUpdateFeature} onDelete={onDeleteFeature} />)}
+          ) : distinguishing.map(f => <FeatureRow key={f.id} feature={f} onUpdate={onUpdateFeature} onDelete={onDeleteFeature} onGenerateVisual={onGenerateFeatureVisual} isGenerating={generatingFeatureId === f.id} />)}
         </div>
       </div>
 
@@ -90,7 +106,7 @@ export default function IdentitySection({ character, features, onUpdateCharacter
         <div className="space-y-2">
           {neverInclude.length === 0 ? (
             <div className="text-xs text-muted-foreground p-2 border border-dashed border-border rounded-md">Add things the model should never generate for this character.</div>
-          ) : neverInclude.map(f => <FeatureRow key={f.id} feature={f} onUpdate={onUpdateFeature} onDelete={onDeleteFeature} />)}
+          ) : neverInclude.map(f => <FeatureRow key={f.id} feature={f} onUpdate={onUpdateFeature} onDelete={onDeleteFeature} onGenerateVisual={onGenerateFeatureVisual} isGenerating={generatingFeatureId === f.id} />)}
         </div>
       </div>
 
