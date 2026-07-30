@@ -435,21 +435,31 @@ export default function Studio() {
     setShots((prev) => [...prev, ...newShots]);
     if (newShots.length > 0) setSelectedShotId(newShots[0].id);
 
+    const activeCharacter = characters.find((c) => c.isActive);
+    const activeStyle = styleLocks.find((l) => l.isActive);
+    const activeEnv = envLocks.find((l) => l.isActive);
+    const activeLight = lightingLocks.find((l) => l.isActive);
+
     for (const shot of newShots) {
       setSelectedShotId(shot.id);
       const seed = resolvedSeed ?? Math.floor(Math.random() * 1000000);
       const payload = compilePrompt({
         intent: shot.intentText || '', shotType: `${shot.shotType || 'Medium'} shot, ${shot.cameraMove || 'Static'} move`,
         cameraParams: { shotType: shot.shotType, cameraMove: shot.cameraMove }, motionParams: {},
-        character: null, style: null, environment: null, lighting: null,
-        seed, aspectRatio: project?.aspectRatio || '16:9', lockStrengths: {}, references,
+        character: activeCharacter ? { identityStatement: activeCharacter.identityStatement, negativePromptFragment: activeCharacter.negativePromptFragment, tier: activeCharacter.tier, triggerToken: activeCharacter.id ? `kzr_char_${activeCharacter.id.slice(-4)}` : null } : null,
+        style: activeStyle ? { colorGrade: activeStyle.colorGrade, filmStock: activeStyle.filmStock, lens: activeStyle.lens } : null,
+        environment: activeEnv ? { description: activeEnv.description, interiorExterior: activeEnv.interiorExterior, scale: activeEnv.scale } : null,
+        lighting: activeLight ? { mood: activeLight.mood, timeOfDay: activeLight.timeOfDay, keyDirection: activeLight.keyDirection } : null,
+        seed, aspectRatio: project?.aspectRatio || '16:9',
+        lockStrengths: { character: activeCharacter?.lockStrength, style: activeStyle?.lockStrength, environment: activeEnv?.lockStrength, lighting: activeLight?.lockStrength },
+        references,
       });
       setGeneration({ status: 'running', stages: { resolve: 'queued', precondition: 'queued', generate: 'queued', postprocess: 'queued', measure: 'queued', finalize: 'queued' }, job: null, version: null, previousVersion: null, scores: null, remedies: null, error: null });
       try {
         const result = await runPipeline({
-          projectId, shotId: shot.id, payload: { ...payload, seed, duration: shot.duration }, qualityTier: 'Draft',
-          character: null, styleLock: null, envLock: null, lightingLock: null,
-          postProcess: { faceRestoration: { enabled: false }, upscale: { enabled: false }, colorGrade: { enabled: false } },
+          projectId, shotId: shot.id, payload: { ...payload, seed, duration: shot.duration, generationMode: references.length > 0 ? 'image2video' : 'text2video', selectedModel: 'veo3' }, qualityTier: 'Draft',
+          character: activeCharacter, styleLock: activeStyle, envLock: activeEnv, lightingLock: activeLight,
+          postProcess: { faceRestoration: { enabled: !!activeCharacter, threshold: 12, strength: 60 }, upscale: { enabled: false }, colorGrade: { enabled: !!activeStyle } },
           onStageUpdate: (stageId, status) => setGeneration((prev) => ({ ...prev, stages: { ...prev.stages, [stageId]: status } })),
           onCreditUpdate: (newBalance) => setProject((prev) => ({ ...prev, creditBalance: newBalance })),
         });
