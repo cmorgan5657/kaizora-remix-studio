@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Film, Loader2, Check, AlertCircle, RefreshCw, Copy } from 'lucide-react';
+import { Film, Loader2, Check, AlertCircle, RefreshCw, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import { compilePrompt } from '@/lib/compiler';
 import { parseIntent } from '@/lib/intentParser';
 import IntentChips from './IntentChips';
@@ -48,6 +48,7 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
   const [camera, setCamera] = useState({ shotType: 'Medium', cameraMove: 'Static', cameraSpeed: 50, cameraDistance: 50, cameraEasing: 'Linear', cameraStartDelay: 0, cameraPath: [] });
   const [motion, setMotion] = useState({ motionMode: 'simple', posture: 'Standing', energy: 50, weight: 50, tension: 50, bodyFacing: 'Front', handState: 'At sides', armPosition: 'At sides', headTiltPitch: 0, headTiltRoll: 0, gestureFrequency: 'Occasional', gestureStyle: 'Natural', propInteraction: 'None', gazeTarget: 'Camera', eyeContactDuration: 'Brief', blinkRate: 'Natural' });
   const [abCompare, setAbCompare] = useState(false);
+  const [scoresOpen, setScoresOpen] = useState(false);
   const [postProcess, setPostProcess] = useState({
     faceRestoration: { enabled: true, threshold: 12, strength: 60 },
     upscale: { enabled: false, targetResolution: '1080p' },
@@ -207,8 +208,19 @@ export default function ShotWorkspace({ project, characters, styleLocks, envLock
       </div>
 
       {generation?.status === 'complete' && generation?.scores && (
-        <div className="flex-shrink-0 max-h-[160px] overflow-y-auto scrollbar-thin px-4 py-2 border-t border-border">
-          <ConsistencyInspector scores={generation.scores} remedies={generation.remedies || []} />
+        <div className="flex-shrink-0 border-t border-border">
+          <button onClick={() => setScoresOpen(!scoresOpen)} className="w-full flex items-center justify-between px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <span className="flex items-center gap-1.5">
+              <span className="font-medium text-secondary-foreground">Consistency Scores</span>
+              <span className="text-muted-foreground">· Overall {Math.round(generation.scores.overall || 0)}/100</span>
+            </span>
+            {scoresOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+          </button>
+          {scoresOpen && (
+            <div className="max-h-[160px] overflow-y-auto scrollbar-thin px-4 py-2">
+              <ConsistencyInspector scores={generation.scores} remedies={generation.remedies || []} />
+            </div>
+          )}
         </div>
       )}
 
